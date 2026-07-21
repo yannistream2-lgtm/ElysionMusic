@@ -3,10 +3,10 @@ module.exports = {
   token: process.env.DISCORD_TOKEN,
   prefix: "!",
   enablePrefix: true,
-  supportServer: "https://discord.gg/9MVAPpfs8D",
+  supportServer: "https://discord.gg/7uRnJ2Zd8k",
 
   activity: {
-    name: "/help",
+    name: "!help",
     type: "LISTENING" // PLAYING, LISTENING, WATCHING, STREAMING, COMPETING
   },
 
