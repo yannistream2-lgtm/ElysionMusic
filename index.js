@@ -650,7 +650,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     player.destroy();
-    const container = createSimpleContainer('Stopped', 'Arrêté et file d'attente vidée', config.emojis.stop);
+    const container = createSimpleContainer('Stopped', 'Arrêté et file attente vidée', config.emojis.stop);
     await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
   }
 
