@@ -321,7 +321,7 @@ function createQueueContainer(player, guild, user) {
     description = 'La file attente est actuellement vide.';
   }
 
-  description += `\n\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop} | **Total:** ${player.queue.length + 1} tracks`;
+  description += `\n\n**Boucle:** ${(!player.loop || player.loop === 'non') ? 'off' : player.loop} | **Total:** ${player.queue.length + 1} tracks`;
 
   let thumbnail = client.user.displayAvatarURL({ size: 1024 });
 
@@ -349,7 +349,7 @@ function createStatsContainer() {
   const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
   const memory = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
 
-  const description = `**Servers:** ${client.guilds.cache.size}\n**Users:** ${totalUsers}\n**Players:** ${players}\n**Uptime:** ${uptime}\n**Ping:** ${client.ws.ping}ms\n**Memory:** ${memory} MB`;
+  const description = `**Servers:** ${client.guilds.cache.size}\n**Utilisateur/trice:** ${totalUsers}\n**Joueurs:** ${players}\n**Uptime:** ${uptime}\n**Ping:** ${client.ws.ping}ms\n**Memory:** ${memory} MB`;
 
   return new ContainerBuilder()
     .addSectionComponents(
@@ -415,7 +415,7 @@ riffy.on('trackStart', async (player, track) => {
     const msg = await channel.send({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
     nowPlayingMessages.set(player.guildId, msg);
   } catch (err) {
-    console.error('Failed to send Now Playing message:', err);
+    console.error('Échec de envoi du message En cours de lecture:', err);
   }
 });
 
@@ -428,7 +428,7 @@ riffy.on('queueEnd', async (player) => {
       const disabledContainer = createNowPlayingContainer(player, player.current, true);
       await msg.edit({ components: [disabledContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
     } catch (error) {
-      console.error('Failed to disable buttons:', error);
+      console.error('Impossible de désactiver les boutons:', error);
     }
     nowPlayingMessages.delete(player.guildId);
   }
