@@ -805,7 +805,7 @@ client.on('interactionCreate', async (interaction) => {
           }
 
           player.queue.clear();
-          const container = createSimpleContainer('Queue Cleared', 'File d'attente vidée', config.emojis.success);
+          const container = createSimpleContainer('Queue Cleared', 'File attente vidée', config.emojis.success);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
@@ -956,7 +956,7 @@ client.on('interactionCreate', async (interaction) => {
               const resolve = await riffy.resolve({ query, requester: message.author.id });
 
               if (!resolve || !resolve.tracks.length) {
-                return message.reply(`${config.emojis.error} No results found`);
+                return message.reply(`${config.emojis.error} Pas de résulta trouver`);
               }
 
               if (resolve.loadType === 'playlist') {
