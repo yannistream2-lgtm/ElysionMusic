@@ -116,27 +116,27 @@ client.on('ready', async () => {
   client.user.setActivity(config.activity.name, { type: activityType });
   console.log(`${config.emojis.success} Activity set: ${config.activity.type} ${config.activity.name}`);
 
-  const commands = [
-    { name: 'play', description: 'Play a song', options: [{ name: 'query', description: 'Song name or URL', type: 3, required: true }] },
-    { name: 'pause', description: 'Pause the current song' },
-    { name: 'resume', description: 'Resume the paused song' },
-    { name: 'skip', description: 'Skip the current song' },
-    { name: 'stop', description: 'Stop the player and clear queue' },
-    { name: 'volume', description: 'Set volume', options: [{ name: 'level', description: 'Volume level (1-100)', type: 4, required: true, min_value: 1, max_value: 100 }] },
-    { name: 'queue', description: 'Show the current queue' },
-    { name: 'nowplaying', description: 'Show currently playing song' },
-    { name: 'shuffle', description: 'Shuffle the queue' },
-    { name: 'loop', description: 'Toggle loop mode', options: [{ name: 'mode', description: 'Loop mode', type: 3, required: true, choices: [{ name: 'Off', value: 'none' }, { name: 'Track', value: 'track' }, { name: 'Queue', value: 'queue' }] }] },
-    { name: 'remove', description: 'Remove a song from queue', options: [{ name: 'position', description: 'Position in queue', type: 4, required: true, min_value: 1 }] },
-    { name: 'move', description: 'Move a song in queue', options: [{ name: 'from', description: 'From position', type: 4, required: true, min_value: 1 }, { name: 'to', description: 'To position', type: 4, required: true, min_value: 1 }] },
-    { name: 'clearqueue', description: 'Clear the queue' },
-    { name: '247', description: 'Toggle 24/7 mode' },
-    { name: 'stats', description: 'Show bot statistics' },
-    { name: 'ping', description: 'Show bot latency' },
-    { name: 'invite', description: 'Get bot invite link' },
-    { name: 'support', description: 'Get support server link' },
-    { name: 'help', description: 'Show all commands' }
-  ];
+const commands = [
+  { name: 'play', description: 'Lire une musique', options: [{ name: 'query', description: 'Nom de la musique ou URL', type: 3, required: true }] },
+  { name: 'pause', description: 'Mettre la musique en pause' },
+  { name: 'resume', description: 'Reprendre la musique en pause' },
+  { name: 'skip', description: 'Passer à la musique suivante' },
+  { name: 'stop', description: 'Arrêter la lecture et vider la file d’attente' },
+  { name: 'volume', description: 'Régler le volume', options: [{ name: 'level', description: 'Niveau du volume (1-100)', type: 4, required: true, min_value: 1, max_value: 100 }] },
+  { name: 'queue', description: 'Afficher la file d’attente actuelle' },
+  { name: 'nowplaying', description: 'Afficher la musique en cours de lecture' },
+  { name: 'shuffle', description: 'Mélanger la file d’attente' },
+  { name: 'loop', description: 'Activer ou désactiver le mode répétition', options: [{ name: 'mode', description: 'Mode de répétition', type: 3, required: true, choices: [{ name: 'Désactivé', value: 'none' }, { name: 'Musique', value: 'track' }, { name: 'File d’attente', value: 'queue' }] }] },
+  { name: 'remove', description: 'Supprimer une musique de la file d’attente', options: [{ name: 'position', description: 'Position dans la file d’attente', type: 4, required: true, min_value: 1 }] },
+  { name: 'move', description: 'Déplacer une musique dans la file d’attente', options: [{ name: 'from', description: 'Position actuelle', type: 4, required: true, min_value: 1 }, { name: 'to', description: 'Nouvelle position', type: 4, required: true, min_value: 1 }] },
+  { name: 'clearqueue', description: 'Vider la file d’attente' },
+  { name: '247', description: 'Activer ou désactiver le mode 24/7' },
+  { name: 'stats', description: 'Afficher les statistiques du bot' },
+  { name: 'ping', description: 'Afficher la latence du bot' },
+  { name: 'invite', description: 'Obtenir le lien d’invitation du bot' },
+  { name: 'support', description: 'Obtenir le lien du serveur d’assistance' },
+  { name: 'help', description: 'Afficher toutes les commandes' }
+];
 
   await client.application.commands.set(commands);
   console.log(`${config.emojis.success} Slash commands registered globally`);
