@@ -33,7 +33,7 @@ function startExpressServer() {
     });
 
     app.listen(config.express.port, '0.0.0.0', () => {
-      console.log(`🌐 Express server running on port ${config.express.port}`);
+      console.log(`🌐 Serveur Express en fonctionnement sur le port ${config.express.port}`);
     });
   }
 }
@@ -81,7 +81,7 @@ Object.defineProperty = function(obj, prop, descriptor) {
         return originalDefineProperty(obj, prop, descriptor);
     } catch (e) {
         // If it fails with the specific error, try a fallback
-        if (e instanceof TypeError && e.message.includes('Invalid property descriptor')) {
+        if (e instanceof TypeError && e.message.includes('Descripteur de propriété invalide')) {
             return originalDefineProperty(obj, prop, {
                 value: descriptor.value,
                 writable: true,
@@ -96,12 +96,12 @@ Object.defineProperty = function(obj, prop, descriptor) {
 const queue247 = new Set();
 
 client.on('ready', async () => {
-  console.log(`${config.emojis.success} Logged in as ${client.user.tag}`);
+  console.log(`${config.emojis.success} Connecté en tant que ${client.user.tag}`);
 
   try {
     riffy.init(client.user.id);
   } catch (error) {
-    console.error(`${config.emojis.error} Failed to initialize Riffy:`, error);
+    console.error(`${config.emojis.error} Échec de l'initialisation de Riffy:`, error);
   }
 
   const activityTypes = {
@@ -139,7 +139,7 @@ const commands = [
 ];
 
   await client.application.commands.set(commands);
-  console.log(`${config.emojis.success} Slash commands registered globally`);
+  console.log(`${config.emojis.success} Commandes slash enregistrées globalement`);
 });
 
 client.on('raw', (d) => riffy.updateVoiceState(d));
@@ -201,17 +201,17 @@ function createNowPlayingContainer(player, track, disabled = false) {
       new SectionBuilder()
         .addTextDisplayComponents(
           new TextDisplayBuilder()
-            .setContent(`## ${config.emojis.music} Now Playing\n**[${info.title || 'Unknown Title'}](${info.uri || 'https://youtube.com'})**`)
+            .setContent(`## ${config.emojis.music} Lecture en cours de \n**[${info.title || 'Titre inconnu'}](${info.uri || 'https://youtube.com'})**`)
         )
         .setThumbnailAccessory(
           new ThumbnailBuilder()
             .setURL(thumbnail)
-            .setDescription(info.title || 'Song Thumbnail')
+            .setDescription(info.title || 'Vignette de chanson')
         )
     )
     .addTextDisplayComponents(
       new TextDisplayBuilder()
-        .setContent(`**Duration:** ${formatTime(info.length || 0)} • **Requested By:** <@${track.info.requester}>`)
+        .setContent(`**Duration:** ${formatTime(info.length || 0)} • **Demandé par:** <@${track.info.requester}>`)
     )
     .addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
@@ -304,21 +304,21 @@ function createQueueContainer(player, guild, user) {
   let description = '';
 
   if (current?.info) {
-    description += `**Now Playing:**\n**[${current.info.title}](${current.info.uri})**\n${current.info.author || 'Unknown'} • ${formatTime(current.info.length)} • <@${current.info.requester}>\n\n`;
+    description += `**Lecture en cours:**\n**[${current.info.title}](${current.info.uri})**\n${current.info.author || 'inconnue'} • ${formatTime(current.info.length)} • <@${current.info.requester}>\n\n`;
   }
 
   if (queue.length > 0) {
-    description += `**Up Next:**\n`;
+    description += `**À suivre:**\n`;
     const upcoming = queue.slice(0, 10);
     upcoming.forEach((t, i) => {
       const inf = t.info || {};
-      description += `\`${i + 1}.\` **[${inf.title}](${inf.uri})**\n${inf.author || 'Unknown'} • ${formatTime(inf.length || 0)} • <@${t.info.requester}>\n`;
+      description += `\`${i + 1}.\` **[${inf.title}](${inf.uri})**\n${inf.author || 'inconnue'} • ${formatTime(inf.length || 0)} • <@${t.info.requester}>\n`;
     });
     if (queue.length > 10) {
-      description += `\n*...and ${queue.length - 10} more track(s)*`;
+      description += `\n*...et ${queue.length - 10} plus de piste(s)*`;
     }
   } else if (!current) {
-    description = 'The queue is currently empty.';
+    description = 'La file attente est actuellement vide.';
   }
 
   description += `\n\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop} | **Total:** ${player.queue.length + 1} tracks`;
