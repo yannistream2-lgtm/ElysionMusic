@@ -95,7 +95,7 @@ Object.defineProperty = function(obj, prop, descriptor) {
 
 const queue247 = new Set();
 
-client.on('ready', async () => {
+client.on('clientReady', async () => {
   console.log(`${config.emojis.success} Connecté en tant que ${client.user.tag}`);
 
   try {
