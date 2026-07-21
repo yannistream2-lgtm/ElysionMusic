@@ -370,9 +370,9 @@ function createStatsContainer() {
 }
 
 function createHelpContainer() {
-  const lavalinkStatus = isLavalinkConnected ? '🟢 Connected' : '🔴 Not Connected';
+  const lavalinkStatus = isLavalinkConnected ? '🟢 Connecter' : '🔴 Déconnecter';
 
-  const description = `A powerful music bot with high quality audio\n\n**Total Commands:** 17\n**Prefix:** \`${config.prefix}\`\n**Lavalink:** ${lavalinkStatus}\nMade by **Unknownz**\n\n**${config.emojis.music} Music Commands**\n**play** (p) - Play a song\n**pause** (pa) - Pause current song\n**resume** (r, res) - Resume playback\n**skip** (s, next) - Skip current song\n**stop** (st, leave) - Stop player\n**nowplaying** (np) - Show current song\n**queue** (q) - Show queue\n**loop** (l, repeat) - Loop mode\n**shuffle** (sh, mix) - Shuffle queue\n**volume** (v, vol) - Set volume\n**clearqueue** (cq, clear) - Clear queue\n**remove** (rm, delete) - Remove from queue\n**move** (mv) - Move in queue\n**247** (24/7, stay) - Toggle 24/7\n\n**${config.emojis.info} Utility Commands**\n**stats** (status, info) - Bot stats\n**ping** (latency) - Bot ping\n**invite** (inv) - Invite link\n**support** (server) - Support server\n**help** (h, cmd) - This message`;
+  const description = `Un bot de musique puissant avec un son de haute qualité\n\n**Total Commands:** 17\n**Prefix:** \`${config.prefix}\`\n**Lavalink:** ${lavalinkStatus}\nCrée par **Tasix.226**\n\n**${config.emojis.music} Music Commands**\n**play** (p) - Play a song\n**pause** (pa) - Pause current song\n**resume** (r, res) - Resume playback\n**skip** (s, next) - Skip current song\n**stop** (st, leave) - Stop player\n**nowplaying** (np) - Show current song\n**queue** (q) - Show queue\n**loop** (l, repeat) - Loop mode\n**shuffle** (sh, mix) - Shuffle queue\n**volume** (v, vol) - Set volume\n**clearqueue** (cq, clear) - Clear queue\n**remove** (rm, delete) - Remove from queue\n**move** (mv) - Move in queue\n**247** (24/7, stay) - Toggle 24/7\n\n**${config.emojis.info} Utility Commands**\n**stats** (status, info) - Bot stats\n**ping** (latency) - Bot ping\n**invite** (inv) - Invite link\n**support** (server) - Support server\n**help** (h, cmd) - This message`;
 
   return new ContainerBuilder()
     .addSectionComponents(
@@ -435,7 +435,7 @@ riffy.on('queueEnd', async (player) => {
 
   if (queue247.has(player.guildId)) {
     if (channel) {
-      const container = createSimpleContainerNoButtons('24/7 Mode', 'Queue ended but staying in 24/7 mode', config.emojis.info);
+      const container = createSimpleContainerNoButtons('24/7 Mode', 'La file est terminée mais je reste en mode 24/7', config.emojis.info);
       await channel.send({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
     }
     return;
@@ -459,11 +459,11 @@ client.on('interactionCreate', async (interaction) => {
 
     const member = interaction.member;
     if (!member.voice.channel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in a voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans un canal vocal`, ephemeral: true });
     }
 
     if (member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
 
     switch (interaction.customId) {
@@ -523,7 +523,7 @@ client.on('interactionCreate', async (interaction) => {
           await loopMsg.edit({ components: [updatedContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 }).catch(() => {});
         }
 
-        await interaction.reply({ content: `${config.emojis.loop} Loop set to: ${loopLabel}`, ephemeral: true });
+        await interaction.reply({ content: `${config.emojis.loop} Boucle réglée sur: ${loopLabel}`, ephemeral: true });
         break;
       }
 
@@ -543,11 +543,11 @@ client.on('interactionCreate', async (interaction) => {
     const query = options.getString('query');
 
     if (!member.voice.channel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in a voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans un canal vocal`, ephemeral: true });
     }
 
     if (!isLavalinkConnected) {
-      return interaction.reply({ content: `${config.emojis.error} Lavalink is not connected. Music commands are unavailable.`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Lavalink n'est pas connecté. Les commandes de musique ne sont pas disponibles.`, ephemeral: true });
     }
 
     await interaction.deferReply();
@@ -567,7 +567,7 @@ client.on('interactionCreate', async (interaction) => {
       const resolve = await riffy.resolve({ query, requester: member.user.id });
 
       if (!resolve || !resolve.tracks.length) {
-        return interaction.editReply({ content: `${config.emojis.error} No results found` });
+        return interaction.editReply({ content: `${config.emojis.error} Aucun résultat trouvé` });
       }
 
       if (resolve.loadType === 'playlist') {
@@ -596,21 +596,21 @@ client.on('interactionCreate', async (interaction) => {
 
         await interaction.editReply({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
       } else {
-        return interaction.editReply({ content: `${config.emojis.error} No results found` });
+        return interaction.editReply({ content: `${config.emojis.error} Aucun résultat trouvé` });
       }
 
       if (!player.playing && !player.paused) player.play();
     } catch (error) {
       console.error('Play command error:', error);
-      await interaction.editReply({ content: `${config.emojis.error} An error occurred while playing the song` });
+      await interaction.editReply({ content: `${config.emojis.error} Une erreur s'est produite lors de la lecture de la chanson` });
     }
   }
 
   if (commandName === 'pause') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
 
     player.pause(true);
@@ -620,9 +620,9 @@ client.on('interactionCreate', async (interaction) => {
 
   if (commandName === 'resume') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
 
     player.pause(false);
@@ -634,11 +634,11 @@ client.on('interactionCreate', async (interaction) => {
     const player = riffy.players.get(guild.id);
     if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
 
     player.stop();
-    const container = createSimpleContainer('Skipped', 'Skipped to next track', config.emojis.skip);
+    const container = createSimpleContainer('Skipped', 'Passé à la piste suivante', config.emojis.skip);
     await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
   }
 
@@ -646,19 +646,19 @@ client.on('interactionCreate', async (interaction) => {
     const player = riffy.players.get(guild.id);
     if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
 
     player.destroy();
-    const container = createSimpleContainer('Stopped', 'Stopped and cleared queue', config.emojis.stop);
+    const container = createSimpleContainer('Stopped', 'Arrêté et file d'attente vidée', config.emojis.stop);
     await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
   }
 
   if (commandName === 'volume') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} Stopped et file d'attente vidée`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
 
     const volume = options.getInteger('level');
@@ -669,10 +669,10 @@ client.on('interactionCreate', async (interaction) => {
 
   if (commandName === 'queue') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
 
     if (player.queue.length === 0 && !player.current) {
-      return interaction.reply({ content: `${config.emojis.error} Queue is empty`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} La file est vide`, ephemeral: true });
     }
 
     const queueContainer = createQueueContainer(player, guild, interaction.user);
@@ -708,7 +708,7 @@ client.on('interactionCreate', async (interaction) => {
 
     const currentPosition = player.position || 0;
     const totalDuration = info.length || 0;
-    const status = player.paused ? '⏸️ Paused' : '▶️ Playing';
+    const status = player.paused ? '⏸️ Pause' : '▶️ Jouer';
 
           const description = `**[${info.title || 'Unknown Title'}](${info.uri || 'https://youtube.com'})**\n\n**Status:** ${status}\n**Current Duration:** ${formatTime(currentPosition)} / ${formatTime(totalDuration)}\n**Requested By:** <@${player.current.info.requester}>\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop}`;
 
@@ -717,7 +717,7 @@ client.on('interactionCreate', async (interaction) => {
               new SectionBuilder()
                 .addTextDisplayComponents(
                   new TextDisplayBuilder()
-                    .setContent(`## ${config.emojis.music} Now Playing\n${description}`)
+                    .setContent(`## ${config.emojis.music} Lecture en cours\n${description}`)
                 )
                 .setThumbnailAccessory(
                   new ThumbnailBuilder()
@@ -734,29 +734,29 @@ client.on('interactionCreate', async (interaction) => {
 
         if (commandName === 'shuffle') {
           const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
           if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
           }
           if (player.queue.length === 0) {
-            return interaction.reply({ content: `${config.emojis.error} Queue is empty`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} La file est vide`, ephemeral: true });
           }
 
           player.queue.shuffle();
-          const container = createSimpleContainer('Shuffled', 'Shuffled the queue', config.emojis.shuffle);
+          const container = createSimpleContainer('Shuffled', 'A mélangé la file d'attente', config.emojis.shuffle);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
         if (commandName === 'loop') {
           const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
           if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
           }
 
           const mode = options.getString('mode');
           player.setLoop(mode);
-          const container = createSimpleContainer('Loop Set', `Loop set to: ${mode}`, config.emojis.loop);
+          const container = createSimpleContainer('Loop Set', `Boucle réglée sur: ${mode}`, config.emojis.loop);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
@@ -764,60 +764,60 @@ client.on('interactionCreate', async (interaction) => {
           const player = riffy.players.get(guild.id);
           if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
           if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
           }
 
           const position = options.getInteger('position') - 1;
           if (position < 0 || position >= player.queue.length) {
-            return interaction.reply({ content: `${config.emojis.error} Invalid position`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Position invalide`, ephemeral: true });
           }
 
           const removed = player.queue.remove(position);
-          const container = createSimpleContainer('Removed', `Removed: ${removed.info.title}`, config.emojis.success);
+          const container = createSimpleContainer('Removed', `Retirer: ${removed.info.title}`, config.emojis.success);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
         if (commandName === 'move') {
           const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
           if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
           }
 
           const from = options.getInteger('from') - 1;
           const to = options.getInteger('to') - 1;
 
           if (from < 0 || from >= player.queue.length || to < 0 || to >= player.queue.length) {
-            return interaction.reply({ content: `${config.emojis.error} Invalid positions`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Positions invalides`, ephemeral: true });
           }
 
           const track = player.queue.remove(from);
           player.queue.splice(to, 0, track);
-          const container = createSimpleContainer('Moved', `Moved: ${track.info.title}`, config.emojis.success);
+          const container = createSimpleContainer('Moved', `Moov: ${track.info.title}`, config.emojis.success);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
         if (commandName === 'clearqueue') {
           const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
           if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} You need to be in the same voice channel`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
           }
 
           player.queue.clear();
-          const container = createSimpleContainer('Queue Cleared', 'Cleared the queue', config.emojis.success);
+          const container = createSimpleContainer('Queue Cleared', 'File d'attente vidée', config.emojis.success);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
         if (commandName === '247') {
           const player = riffy.players.get(guild.id);
           if (!member.voice.channel) {
-            return interaction.reply({ content: `${config.emojis.error} You need to be in a voice channel`, ephemeral: true });
+            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans un canal vocal`, ephemeral: true });
           }
 
           if (queue247.has(guild.id)) {
             queue247.delete(guild.id);
-            const container = createSimpleContainer('24/7 Disabled', '24/7 mode disabled', config.emojis.success);
+            const container = createSimpleContainer('24/7 Désactiver', '24/7 mode Désactiver', config.emojis.success);
             await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           } else {
             queue247.add(guild.id);
@@ -831,7 +831,7 @@ client.on('interactionCreate', async (interaction) => {
               });
             }
 
-            const container = createSimpleContainer('24/7 Enabled', '24/7 mode enabled', config.emojis.success);
+            const container = createSimpleContainer('24/7 Activé', '24/7 mode Activé', config.emojis.success);
             await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
         }
@@ -854,12 +854,12 @@ client.on('interactionCreate', async (interaction) => {
               new SectionBuilder()
                 .addTextDisplayComponents(
                   new TextDisplayBuilder()
-                    .setContent(`## ${config.emojis.success} Invite Bot\n[Click here to invite me](${invite})`)
+                    .setContent(`## ${config.emojis.success} Invite le Bot\n[Clique ici pour m'inviter](${invite})`)
                 )
                 .setThumbnailAccessory(
                   new ThumbnailBuilder()
                     .setURL(client.user.displayAvatarURL({ size: 1024 }))
-                    .setDescription('Invite Bot')
+                    .setDescription('Invite le Bot')
                 )
             )
             .addSeparatorComponents(
@@ -869,7 +869,7 @@ client.on('interactionCreate', async (interaction) => {
               new ActionRowBuilder()
                 .addComponents(
                   new ButtonBuilder()
-                    .setLabel('Invite Me')
+                    .setLabel('Invite Moi')
                     .setStyle(ButtonStyle.Link)
                     .setURL(invite)
                 )
@@ -884,7 +884,7 @@ client.on('interactionCreate', async (interaction) => {
               new SectionBuilder()
                 .addTextDisplayComponents(
                   new TextDisplayBuilder()
-                    .setContent(`## ${config.emojis.info} Support Server\n[Join our support server](${config.supportServer})`)
+                    .setContent(`## ${config.emojis.info} Serveur d'assistance des bots\n[Rejoins notre serveur d’assistance](${config.supportServer})`)
                 )
                 .setThumbnailAccessory(
                   new ThumbnailBuilder()
@@ -931,14 +931,14 @@ client.on('interactionCreate', async (interaction) => {
 
           if (command === 'play') {
             const query = args.join(' ');
-            if (!query) return message.reply(`${config.emojis.error} Please provide a song name or URL`);
+            if (!query) return message.reply(`${config.emojis.error} Merci de fournir un nom de chanson ou un lien`);
 
             if (!message.member.voice.channel) {
-              return message.reply(`${config.emojis.error} You need to be in a voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans un canal vocal`);
             }
 
             if (!isLavalinkConnected) {
-              return message.reply(`${config.emojis.error} Lavalink is not connected. Music commands are unavailable.`);
+              return message.reply(`${config.emojis.error} Lavalink n'est pas connecté. Les commandes de musique ne sont pas disponibles.`);
             }
 
             try {
@@ -966,8 +966,8 @@ client.on('interactionCreate', async (interaction) => {
                 }
 
                 const container = createSimpleContainerNoButtons(
-                  'Playlist Added',
-                  `Added playlist **${resolve.playlistInfo.name}** (${resolve.tracks.length} tracks)`,
+                  'Playlist ajoutée',
+                  `Ajoutée a la playlist **${resolve.playlistInfo.name}** (${resolve.tracks.length} tracks)`,
                   config.emojis.success
                 );
 
@@ -985,13 +985,13 @@ client.on('interactionCreate', async (interaction) => {
 
                 await message.reply({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
               } else {
-                return message.reply(`${config.emojis.error} No results found`);
+                return message.reply(`${config.emojis.error} Aucun résultat trouvé`);
               }
 
               if (!player.playing && !player.paused) player.play();
             } catch (error) {
-              console.error('Play command error:', error);
-              await message.reply(`${config.emojis.error} An error occurred while playing the song`);
+              console.error('Erreur de commande de lecture:', error);
+              await message.reply(`${config.emojis.error} Une erreur s'est produite en jouant la chanson`);
             }
           }
 
@@ -999,7 +999,7 @@ client.on('interactionCreate', async (interaction) => {
             const player = riffy.players.get(message.guild.id);
             if (!player) return message.reply(`${config.emojis.error} No player found`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             player.pause(true);
@@ -1009,63 +1009,63 @@ client.on('interactionCreate', async (interaction) => {
 
           if (command === 'resume') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             player.pause(false);
-            const container = createSimpleContainer('Resumed', 'Playback resumed', config.emojis.play);
+            const container = createSimpleContainer('Resumer', 'Lecture reprise', config.emojis.play);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === 'skip') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             player.stop();
-            const container = createSimpleContainer('Skipped', 'Skipped to next track', config.emojis.skip);
+            const container = createSimpleContainer('Skipper', 'Passé à la music suivante', config.emojis.skip);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === 'stop') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             player.destroy();
-            const container = createSimpleContainer('Stopped', 'Stopped and cleared queue', config.emojis.stop);
+            const container = createSimpleContainer('Stopper', 'Arrêté et file d'attente vidée', config.emojis.stop);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === 'volume') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             const volume = parseInt(args[0]);
             if (isNaN(volume) || volume < 1 || volume > 100) {
-              return message.reply(`${config.emojis.error} Please provide a volume between 1-100`);
+              return message.reply(`${config.emojis.error} Veuillez indiquer un volume entre 1 et 100`);
             }
 
             player.setVolume(volume);
-            const container = createSimpleContainer('Volume Set', `Volume set to ${volume}%`, config.emojis.volume);
+            const container = createSimpleContainer('Réglage du volume', `Volume réglé sur ${volume}%`, config.emojis.volume);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === 'queue') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
 
             if (player.queue.length === 0 && !player.current) {
-              return message.reply(`${config.emojis.error} Queue is empty`);
+              return message.reply(`${config.emojis.error} La file est vide`);
             }
 
             const queueContainer = createQueueContainer(player, message.guild, message.author);
@@ -1075,7 +1075,7 @@ client.on('interactionCreate', async (interaction) => {
           if (command === 'nowplaying') {
             const player = riffy.players.get(message.guild.id);
             if (!player || !player.current) {
-              return message.reply(`${config.emojis.error} Nothing is playing`);
+              return message.reply(`${config.emojis.error} Rien ne joue`);
             }
 
             const info = player.current.info ?? {};
@@ -1101,9 +1101,9 @@ client.on('interactionCreate', async (interaction) => {
 
             const currentPosition = player.position || 0;
             const totalDuration = info.length || 0;
-            const status = player.paused ? '⏸️ Paused' : '▶️ Playing';
+            const status = player.paused ? '⏸️ Pause' : '▶️ Jouer';
 
-            const description = `**[${info.title || 'Unknown Title'}](${info.uri || 'https://youtube.com'})**\n\n**Status:** ${status}\n**Current Duration:** ${formatTime(currentPosition)} / ${formatTime(totalDuration)}\n**Requested By:** <@${player.current.info.requester}>\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop}`;
+            const description = `**[${info.title || 'Titre inconnu'}](${info.uri || 'https://youtube.com'})**\n\n**Status:** ${status}\n**Current Duration:** ${formatTime(currentPosition)} / ${formatTime(totalDuration)}\n**Requested By:** <@${player.current.info.requester}>\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop}`;
 
             const container = new ContainerBuilder()
               .addSectionComponents(
@@ -1115,7 +1115,7 @@ client.on('interactionCreate', async (interaction) => {
                   .setThumbnailAccessory(
                     new ThumbnailBuilder()
                       .setURL(thumbnail)
-                      .setDescription(info.title || 'Song Thumbnail')
+                      .setDescription(info.title || 'Vignette de chanson')
                   )
               )
               .addSeparatorComponents(
@@ -1127,12 +1127,12 @@ client.on('interactionCreate', async (interaction) => {
 
           if (command === 'shuffle') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
             if (player.queue.length === 0) {
-              return message.reply(`${config.emojis.error} Queue is empty`);
+              return message.reply(`${config.emojis.error} La file est vide`);
             }
 
             player.queue.shuffle();
@@ -1142,26 +1142,26 @@ client.on('interactionCreate', async (interaction) => {
 
           if (command === 'loop') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             const mode = args[0]?.toLowerCase();
             if (!mode || !['off', 'track', 'queue'].includes(mode)) {
-              return message.reply(`${config.emojis.error} Please specify: off, track, or queue`);
+              return message.reply(`${config.emojis.error} Veuillez préciser : hors ligne, piste ou file d'attente`);
             }
 
             player.setLoop(mode);
-            const container = createSimpleContainer('Loop Set', `Loop set to: ${mode}`, config.emojis.loop);
+            const container = createSimpleContainer('Ensemble de boucles', `Boucle réglée sur : ${mode}`, config.emojis.loop);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === 'remove') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             const position = parseInt(args[0]) - 1;
@@ -1176,44 +1176,44 @@ client.on('interactionCreate', async (interaction) => {
 
           if (command === 'move') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             const from = parseInt(args[0]) - 1;
             const to = parseInt(args[1]) - 1;
 
             if (isNaN(from) || isNaN(to) || from < 0 || from >= player.queue.length || to < 0 || to >= player.queue.length) {
-              return message.reply(`${config.emojis.error} Invalid positions`);
+              return message.reply(`${config.emojis.error} Posision Invalide`);
             }
 
             const track = player.queue.remove(from);
             player.queue.splice(to, 0, track);
-            const container = createSimpleContainer('Moved', `Moved: ${track.info.title}`, config.emojis.success);
+            const container = createSimpleContainer('Moov', `Moov: ${track.info.title}`, config.emojis.success);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === 'clearqueue') {
             const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
+            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
             if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} You need to be in the same voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
             }
 
             player.queue.clear();
-            const container = createSimpleContainer('Queue Cleared', 'Cleared the queue', config.emojis.success);
+            const container = createSimpleContainer('File vidée', 'File vidée', config.emojis.success);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
           if (command === '247') {
             if (!message.member.voice.channel) {
-              return message.reply(`${config.emojis.error} You need to be in a voice channel`);
+              return message.reply(`${config.emojis.error} Tu dois être dans un canal vocal`);
             }
 
             if (queue247.has(message.guild.id)) {
               queue247.delete(message.guild.id);
-              const container = createSimpleContainer('24/7 Disabled', '24/7 mode disabled', config.emojis.success);
+              const container = createSimpleContainer('24/7 désactivé', 'Mode 24/7 désactivé', config.emojis.success);
               await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
             } else {
               queue247.add(message.guild.id);
@@ -1228,7 +1228,7 @@ client.on('interactionCreate', async (interaction) => {
                 });
               }
 
-              const container = createSimpleContainer('24/7 Enabled', '24/7 mode enabled', config.emojis.success);
+              const container = createSimpleContainer('Activé 24/7', 'Mode 24/7 activé', config.emojis.success);
               await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
             }
           }
@@ -1251,7 +1251,7 @@ client.on('interactionCreate', async (interaction) => {
                 new SectionBuilder()
                   .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                      .setContent(`## ${config.emojis.success} Invite Bot\n[Click here to invite me](${invite})`)
+                      .setContent(`## ${config.emojis.success} Invite le Bot\n[Clique ici pour m'inviter](${invite})`)
                   )
                   .setThumbnailAccessory(
                     new ThumbnailBuilder()
@@ -1266,7 +1266,7 @@ client.on('interactionCreate', async (interaction) => {
                 new ActionRowBuilder()
                   .addComponents(
                     new ButtonBuilder()
-                      .setLabel('Invite Me')
+                      .setLabel('Invite Moi')
                       .setStyle(ButtonStyle.Link)
                       .setURL(invite)
                   )
@@ -1281,7 +1281,7 @@ client.on('interactionCreate', async (interaction) => {
                 new SectionBuilder()
                   .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                      .setContent(`## ${config.emojis.info} Support Server\n[Join our support server](${config.supportServer})`)
+                      .setContent(`## ${config.emojis.info} Serveur d'assistance des bots\n[Rejoins notre serveur d’assistance](${config.supportServer})`)
                   )
                   .setThumbnailAccessory(
                     new ThumbnailBuilder()
