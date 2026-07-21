@@ -1039,7 +1039,7 @@ client.on('interactionCreate', async (interaction) => {
             }
 
             player.destroy();
-            const container = createSimpleContainer('Stopper', 'Arrêté et file d'attente vidée', config.emojis.stop);
+            const container = createSimpleContainer('Stopper', 'Arrêté et file attente vidée', config.emojis.stop);
             await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
