@@ -632,7 +632,7 @@ client.on('interactionCreate', async (interaction) => {
 
   if (commandName === 'skip') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
       return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
@@ -644,7 +644,7 @@ client.on('interactionCreate', async (interaction) => {
 
   if (commandName === 'stop') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} `, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
       return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
@@ -682,7 +682,7 @@ client.on('interactionCreate', async (interaction) => {
   if (commandName === 'nowplaying') {
     const player = riffy.players.get(guild.id);
     if (!player || !player.current) {
-      return interaction.reply({ content: `${config.emojis.error} Nothing is playing`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Rien ne joue`, ephemeral: true });
     }
 
     const info = player.current.info ?? {};
@@ -743,7 +743,7 @@ client.on('interactionCreate', async (interaction) => {
           }
 
           player.queue.shuffle();
-          const container = createSimpleContainer('Shuffled', 'A mélangé la file d'attente', config.emojis.shuffle);
+          const container = createSimpleContainer('Shuffled', 'A mélangé la file attente', config.emojis.shuffle);
           await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
 
