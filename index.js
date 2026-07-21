@@ -656,7 +656,7 @@ client.on('interactionCreate', async (interaction) => {
 
   if (commandName === 'volume') {
     const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} Stopped et file d'attente vidée`, ephemeral: true });
+    if (!player) return interaction.reply({ content: `${config.emojis.error} Stopped et file attente vidée`, ephemeral: true });
     if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
       return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
     }
