@@ -442,7 +442,7 @@ riffy.on('queueEnd', async (player) => {
   }
 
   if (channel) {
-    const container = createSimpleContainerNoButtons('Queue Ended', 'Queue ended, leaving voice channel', config.emojis.success);
+    const container = createSimpleContainerNoButtons('File terminée', 'File terminée, leaving voice channel', config.emojis.success);
     await channel.send({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
   }
 
