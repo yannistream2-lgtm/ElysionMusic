@@ -1,13 +1,13 @@
 {
-  "name": "musicbot",
+  "name": "ElysionMusic",
   "version": "1.0.0",
-  "description": "An Advanced Music Bot.",
+  "description": "Bot de music de Elysion.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo "Erreur : aucun test spécifié" && exit 1"
   },
   "keywords": [],
-  "author": "Unknownzop",
+  "author": "Tasix.226",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.22.1",
