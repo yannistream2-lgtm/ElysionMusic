@@ -454,7 +454,7 @@ client.on('interactionCreate', async (interaction) => {
     const player = riffy.players.get(interaction.guildId);
 
     if (!player) {
-      return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
+      return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
     }
 
     const member = interaction.member;
@@ -479,7 +479,7 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         await interaction.reply({ 
-          content: shouldPause ? `${config.emojis.pause} Paused` : `${config.emojis.play} Resumed`, 
+          content: shouldPause ? `${config.emojis.pause} Pause` : `${config.emojis.play} Resumer`, 
           ephemeral: true 
         });
         break;
@@ -497,21 +497,21 @@ client.on('interactionCreate', async (interaction) => {
         const disabledContainer = createNowPlayingContainer(player, player.current, true);
         await interaction.message.edit({ components: [disabledContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
         player.destroy();
-        await interaction.reply({ content: `${config.emojis.stop} Stopped`, ephemeral: true });
+        await interaction.reply({ content: `${config.emojis.stop} Stopper`, ephemeral: true });
         break;
       }
 
       case 'shuffle': {
         if (player.queue.length === 0) {
-          return interaction.reply({ content: `${config.emojis.error} Queue is empty`, ephemeral: true });
+          return interaction.reply({ content: `${config.emojis.error} La file est vide`, ephemeral: true });
         }
         player.queue.shuffle();
-        await interaction.reply({ content: `${config.emojis.shuffle} Shuffled queue`, ephemeral: true });
+        await interaction.reply({ content: `${config.emojis.shuffle} File d'attente mélangée`, ephemeral: true });
         break;
       }
 
       case 'loop': {
-        const modes = ['none', 'track', 'queue'];
+        const modes = ['aucun', 'piste', 'file attente'];
         const currentMode = player.loop || 'none';
         const nextMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
         player.setLoop(nextMode);
