@@ -1,45 +1,29 @@
 // index.js
-const { Client, GatewayIntentBits, ActivityType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags } = require('discord.js');
-const { Riffy } = require('riffy');
-const config = require('./config.js');
-const express = require('express');
 require('dotenv').config();
 
-// Function to start Express server
-function startExpressServer() {
-  if (config.express.enabled) {
-    const app = express();
+const {
+  Client,
+  GatewayIntentBits,
+  ActivityType,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ContainerBuilder,
+  SectionBuilder,
+  TextDisplayBuilder,
+  ThumbnailBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MessageFlags
+} = require('discord.js');
 
-    app.get('/', (req, res) => {
-      res.json({
-        status: 'online',
-        bot: client.user ? client.user.tag : 'Starting...',
-        servers: client.guilds.cache ? client.guilds.cache.size : 0,
-        uptime: process.uptime(),
-        lavalink: isLavalinkConnected ? 'connected' : 'disconnected'
-      });
-    });
+const express = require('express');
+const { Riffy } = require('riffy');
+const config = require('./config.js');
 
-    app.get('/stats', (req, res) => {
-      res.json({
-        guilds: client.guilds.cache ? client.guilds.cache.size : 0,
-        users: client.guilds.cache ? client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0) : 0,
-        players: riffy.players ? riffy.players.size : 0,
-        uptime: process.uptime(),
-        memory: process.memoryUsage().heapUsed / 1024 / 1024,
-        ping: client.ws ? client.ws.ping : 0,
-        lavalink: isLavalinkConnected
-      });
-    });
-
-    app.listen(config.express.port, '0.0.0.0', () => {
-      console.log(`🌐 Serveur Express en fonctionnement sur le port ${config.express.port}`);
-    });
-  }
-}
-
-// Start Express server before bot
-startExpressServer();
+// ============================================================
+// CLIENT DISCORD
+// ============================================================
 
 const intents = [
   GatewayIntentBits.Guilds,
@@ -51,1265 +35,2768 @@ if (config.enablePrefix) {
   intents.push(GatewayIntentBits.MessageContent);
 }
 
-const client = new Client({ intents });
+const client = new Client({
+  intents
+});
+
+// ============================================================
+// VARIABLES
+// ============================================================
 
 let isLavalinkConnected = false;
 
-const riffy = new Riffy(client, config.lavalink.nodes, {
-  send: (payload) => {
-    const guild = client.guilds.cache.get(payload.d.guild_id);
-    if (guild) guild.shard.send(payload);
-  },
-  defaultSearchPlatform: "ytmsearch",
-  restVersion: "v4"
-});
-
-// Fix Riffy Node initialization error by overriding the broken defineProperty call
-// This is a workaround for the riffy package bug mentioned in the error
-const { Node } = require('riffy/build/structures/Node');
-const originalDefineProperty = Object.defineProperty;
-Object.defineProperty = function(obj, prop, descriptor) {
-    if (obj instanceof Node && (prop === 'host' || prop === 'port' || prop === 'password' || prop === 'secure' || prop === 'identifier')) {
-        return originalDefineProperty(obj, prop, {
-            value: descriptor.value,
-            writable: true,
-            enumerable: true,
-            configurable: true
-        });
-    }
-    try {
-        return originalDefineProperty(obj, prop, descriptor);
-    } catch (e) {
-        // If it fails with the specific error, try a fallback
-        if (e instanceof TypeError && e.message.includes('Descripteur de propriété invalide')) {
-            return originalDefineProperty(obj, prop, {
-                value: descriptor.value,
-                writable: true,
-                enumerable: true,
-                configurable: true
-            });
-        }
-        throw e;
-    }
-};
-
 const queue247 = new Set();
-
-client.on('clientReady', async () => {
-  console.log(`${config.emojis.success} Connecté en tant que ${client.user.tag}`);
-
-  try {
-    riffy.init(client.user.id);
-  } catch (error) {
-    console.error(`${config.emojis.error} Échec de l'initialisation de Riffy:`, error);
-  }
-
-  const activityTypes = {
-    'PLAYING': ActivityType.Playing,
-    'LISTENING': ActivityType.Listening,
-    'WATCHING': ActivityType.Watching,
-    'STREAMING': ActivityType.Streaming,
-    'COMPETING': ActivityType.Competing
-  };
-
-  const activityType = activityTypes[config.activity.type] || ActivityType.Listening;
-  client.user.setActivity(config.activity.name, { type: activityType });
-  console.log(`${config.emojis.success} Activity set: ${config.activity.type} ${config.activity.name}`);
-
-const commands = [
-  { name: 'play', description: 'Lire une musique', options: [{ name: 'query', description: 'Nom de la musique ou URL', type: 3, required: true }] },
-  { name: 'pause', description: 'Mettre la musique en pause' },
-  { name: 'resume', description: 'Reprendre la musique en pause' },
-  { name: 'skip', description: 'Passer à la musique suivante' },
-  { name: 'stop', description: 'Arrêter la lecture et vider la file d’attente' },
-  { name: 'volume', description: 'Régler le volume', options: [{ name: 'level', description: 'Niveau du volume (1-100)', type: 4, required: true, min_value: 1, max_value: 100 }] },
-  { name: 'queue', description: 'Afficher la file d’attente actuelle' },
-  { name: 'nowplaying', description: 'Afficher la musique en cours de lecture' },
-  { name: 'shuffle', description: 'Mélanger la file d’attente' },
-  { name: 'loop', description: 'Activer ou désactiver le mode répétition', options: [{ name: 'mode', description: 'Mode de répétition', type: 3, required: true, choices: [{ name: 'Désactivé', value: 'none' }, { name: 'Musique', value: 'track' }, { name: 'File d’attente', value: 'queue' }] }] },
-  { name: 'remove', description: 'Supprimer une musique de la file d’attente', options: [{ name: 'position', description: 'Position dans la file d’attente', type: 4, required: true, min_value: 1 }] },
-  { name: 'move', description: 'Déplacer une musique dans la file d’attente', options: [{ name: 'from', description: 'Position actuelle', type: 4, required: true, min_value: 1 }, { name: 'to', description: 'Nouvelle position', type: 4, required: true, min_value: 1 }] },
-  { name: 'clearqueue', description: 'Vider la file d’attente' },
-  { name: '247', description: 'Activer ou désactiver le mode 24/7' },
-  { name: 'stats', description: 'Afficher les statistiques du bot' },
-  { name: 'ping', description: 'Afficher la latence du bot' },
-  { name: 'invite', description: 'Obtenir le lien d’invitation du bot' },
-  { name: 'support', description: 'Obtenir le lien du serveur d’assistance' },
-  { name: 'help', description: 'Afficher toutes les commandes' }
-];
-
-  await client.application.commands.set(commands);
-  console.log(`${config.emojis.success} Commandes slash enregistrées globalement`);
-});
-
-client.on('raw', (d) => riffy.updateVoiceState(d));
-
-riffy.on('nodeConnect', (node) => {
-  console.log(`${config.emojis.success} Node ${node.name} connected`);
-  isLavalinkConnected = true;
-});
-
-riffy.on('nodeError', (node, error) => {
-  console.error(`${config.emojis.error} Node ${node.name} error:`, error);
-  isLavalinkConnected = false;
-});
-
-riffy.on('nodeDisconnect', (node) => {
-  console.log(`${config.emojis.error} Node ${node.name} disconnected`);
-  isLavalinkConnected = false;
-});
-
 const nowPlayingMessages = new Map();
 
-function formatTime(ms) {
-  const seconds = Math.floor((ms / 1000) % 60);
-  const minutes = Math.floor((ms / (1000 * 60)) % 60);
-  const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+// ============================================================
+// RIFFY / LAVALINK
+// ============================================================
 
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+const riffy = new Riffy(
+  client,
+  config.lavalink.nodes,
+  {
+    send: (payload) => {
+      const guild = client.guilds.cache.get(payload.d.guild_id);
+
+      if (guild) {
+        guild.shard.send(payload);
+      }
+    },
+
+    defaultSearchPlatform: 'ytmsearch',
+    restVersion: 'v4'
   }
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+);
+
+// ============================================================
+// EXPRESS
+// ============================================================
+
+function startExpressServer() {
+  if (!config.express.enabled) {
+    return;
+  }
+
+  const app = express();
+
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'online',
+      bot: client.user ? client.user.tag : 'Starting...',
+      servers: client.guilds.cache.size,
+      uptime: process.uptime(),
+      lavalink: isLavalinkConnected
+        ? 'connected'
+        : 'disconnected'
+    });
+  });
+
+  app.get('/stats', (req, res) => {
+    res.json({
+      guilds: client.guilds.cache.size,
+
+      users: client.guilds.cache.reduce(
+        (total, guild) => total + guild.memberCount,
+        0
+      ),
+
+      players: riffy.players.size,
+
+      uptime: process.uptime(),
+
+      memory:
+        process.memoryUsage().heapUsed /
+        1024 /
+        1024,
+
+      ping: client.ws.ping,
+
+      lavalink: isLavalinkConnected
+    });
+  });
+
+  app.listen(
+    config.express.port,
+    '0.0.0.0',
+    () => {
+      console.log(
+        `🌐 Serveur Express actif sur le port ${config.express.port}`
+      );
+    }
+  );
 }
 
-function createNowPlayingContainer(player, track, disabled = false) {
-  const info = track.info ?? {};
-  let thumbnail = info.artworkUrl || info.thumbnail || null;
+// ============================================================
+// UTILITAIRES
+// ============================================================
 
-  if (!thumbnail && info.uri && info.uri.includes('youtube.com')) {
-    const videoId = info.uri.split('v=')[1]?.split('&')[0];
+function formatTime(ms = 0) {
+  const seconds = Math.floor((ms / 1000) % 60);
+  const minutes = Math.floor((ms / (1000 * 60)) % 60);
+  const hours = Math.floor(
+    (ms / (1000 * 60 * 60)) % 24
+  );
+
+  if (hours > 0) {
+    return `${hours}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds
+      .toString()
+      .padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
+}
+
+function getThumbnail(info = {}) {
+  let thumbnail =
+    info.artworkUrl ||
+    info.thumbnail ||
+    null;
+
+  if (
+    !thumbnail &&
+    info.uri &&
+    info.uri.includes('youtube.com')
+  ) {
+    const videoId =
+      info.uri
+        .split('v=')[1]
+        ?.split('&')[0];
+
     if (videoId) {
-      thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      thumbnail =
+        `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     }
   }
 
-  if (!thumbnail && info.uri && info.uri.includes('youtu.be')) {
-    const videoId = info.uri.split('youtu.be/')[1]?.split('?')[0];
+  if (
+    !thumbnail &&
+    info.uri &&
+    info.uri.includes('youtu.be')
+  ) {
+    const videoId =
+      info.uri
+        .split('youtu.be/')[1]
+        ?.split('?')[0];
+
     if (videoId) {
-      thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      thumbnail =
+        `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     }
   }
 
-  if (!thumbnail) {
-    thumbnail = 'https://i.imgur.com/QYJfXQv.png';
+  return (
+    thumbnail ||
+    'https://i.imgur.com/QYJfXQv.png'
+  );
+}
+
+function getUserAvatar() {
+  if (!client.user) {
+    return 'https://i.imgur.com/QYJfXQv.png';
   }
 
-  const isPaused = player.paused;
+  return client.user.displayAvatarURL({
+    size: 1024
+  });
+}
 
-  const container = new ContainerBuilder()
+function sendComponentsV2(channel, container) {
+  return channel.send({
+    components: [container],
+    flags:
+      MessageFlags.IsPersistent |
+      MessageFlags.IsComponentsV2
+  });
+}
+
+// ============================================================
+// CONTAINERS
+// ============================================================
+
+function createSimpleContainer(
+  title,
+  description,
+  emoji = config.emojis.info
+) {
+  return new ContainerBuilder()
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
           new TextDisplayBuilder()
-            .setContent(`## ${config.emojis.music} Lecture en cours de \n**[${info.title || 'Titre inconnu'}](${info.uri || 'https://youtube.com'})**`)
+            .setContent(
+              `## ${emoji} ${title}\n${description}`
+            )
         )
         .setThumbnailAccessory(
           new ThumbnailBuilder()
-            .setURL(thumbnail)
-            .setDescription(info.title || 'Vignette de chanson')
+            .setURL(getUserAvatar())
+            .setDescription(title)
         )
-    )
-    .addTextDisplayComponents(
-      new TextDisplayBuilder()
-        .setContent(`**Duration:** ${formatTime(info.length || 0)} • **Demandé par:** <@${track.info.requester}>`)
     )
     .addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-    )
-    .addActionRowComponents(
-      new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(isPaused ? 'resume' : 'pause')
-            .setEmoji(isPaused ? config.emojis.play : config.emojis.pause)
-            .setStyle(isPaused ? ButtonStyle.Success : ButtonStyle.Primary)
-            .setDisabled(disabled),
-          new ButtonBuilder()
-            .setCustomId('skip')
-            .setEmoji(config.emojis.skip)
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(disabled),
-          new ButtonBuilder()
-            .setCustomId('stop')
-            .setEmoji(config.emojis.stop)
-            .setStyle(ButtonStyle.Danger)
-            .setDisabled(disabled),
-          new ButtonBuilder()
-            .setCustomId('shuffle')
-            .setEmoji(config.emojis.shuffle)
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(disabled),
-          new ButtonBuilder()
-            .setCustomId('queue')
-            .setEmoji(config.emojis.queue)
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(disabled)
+      new SeparatorBuilder()
+        .setSpacing(
+          SeparatorSpacingSize.Small
         )
-    )
-    .addActionRowComponents(
-      new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('loop')
-            .setEmoji(config.emojis.loop)
-            .setStyle(player.loop && player.loop !== 'none' ? ButtonStyle.Success : ButtonStyle.Secondary)
-            .setDisabled(disabled)
-        )
+        .setDivider(true)
     );
+}
+
+function createSimpleContainerNoButtons(
+  title,
+  description,
+  emoji = config.emojis.info
+) {
+  return createSimpleContainer(
+    title,
+    description,
+    emoji
+  );
+}
+
+// ============================================================
+// NOW PLAYING
+// ============================================================
+
+function createNowPlayingContainer(
+  player,
+  track,
+  disabled = false
+) {
+  const info = track?.info || {};
+  const thumbnail = getThumbnail(info);
+
+  const isPaused = player.paused;
+
+  const container =
+    new ContainerBuilder()
+      .addSectionComponents(
+        new SectionBuilder()
+          .addTextDisplayComponents(
+            new TextDisplayBuilder()
+              .setContent(
+                `## ${config.emojis.music} Lecture en cours\n**[${info.title || 'Titre inconnu'}](${info.uri || 'https://youtube.com'})**`
+              )
+          )
+          .setThumbnailAccessory(
+            new ThumbnailBuilder()
+              .setURL(thumbnail)
+              .setDescription(
+                info.title ||
+                'Vignette de chanson'
+              )
+          )
+      )
+      .addTextDisplayComponents(
+        new TextDisplayBuilder()
+          .setContent(
+            `**Durée :** ${formatTime(
+              info.length || 0
+            )} • **Demandé par :** <@${
+              info.requester || client.user.id
+            }>`
+          )
+      )
+      .addSeparatorComponents(
+        new SeparatorBuilder()
+          .setSpacing(
+            SeparatorSpacingSize.Small
+          )
+          .setDivider(true)
+      )
+      .addActionRowComponents(
+        new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(
+                isPaused
+                  ? 'resume'
+                  : 'pause'
+              )
+              .setEmoji(
+                isPaused
+                  ? config.emojis.play
+                  : config.emojis.pause
+              )
+              .setStyle(
+                isPaused
+                  ? ButtonStyle.Success
+                  : ButtonStyle.Primary
+              )
+              .setDisabled(disabled),
+
+            new ButtonBuilder()
+              .setCustomId('skip')
+              .setEmoji(config.emojis.skip)
+              .setStyle(
+                ButtonStyle.Primary
+              )
+              .setDisabled(disabled),
+
+            new ButtonBuilder()
+              .setCustomId('stop')
+              .setEmoji(config.emojis.stop)
+              .setStyle(
+                ButtonStyle.Danger
+              )
+              .setDisabled(disabled),
+
+            new ButtonBuilder()
+              .setCustomId('shuffle')
+              .setEmoji(
+                config.emojis.shuffle
+              )
+              .setStyle(
+                ButtonStyle.Secondary
+              )
+              .setDisabled(disabled),
+
+            new ButtonBuilder()
+              .setCustomId('queue')
+              .setEmoji(
+                config.emojis.queue
+              )
+              .setStyle(
+                ButtonStyle.Secondary
+              )
+              .setDisabled(disabled)
+          )
+      )
+      .addActionRowComponents(
+        new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('loop')
+              .setEmoji(config.emojis.loop)
+              .setStyle(
+                player.loop &&
+                player.loop !== 'none'
+                  ? ButtonStyle.Success
+                  : ButtonStyle.Secondary
+              )
+              .setDisabled(disabled)
+          )
+      );
 
   return container;
 }
 
-function createSimpleContainer(title, description, emoji = config.emojis.info) {
-  return new ContainerBuilder()
-    .addSectionComponents(
-      new SectionBuilder()
-        .addTextDisplayComponents(
-          new TextDisplayBuilder()
-            .setContent(`## ${emoji} ${title}\n${description}`)
-        )
-        .setThumbnailAccessory(
-          new ThumbnailBuilder()
-            .setURL(client.user.displayAvatarURL({ size: 1024 }))
-            .setDescription(title)
-        )
-    )
-    .addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-    );
-}
+// ============================================================
+// QUEUE
+// ============================================================
 
-function createSimpleContainerNoButtons(title, description, emoji = config.emojis.info) {
-  return new ContainerBuilder()
-    .addSectionComponents(
-      new SectionBuilder()
-        .addTextDisplayComponents(
-          new TextDisplayBuilder()
-            .setContent(`## ${emoji} ${title}\n${description}`)
-        )
-        .setThumbnailAccessory(
-          new ThumbnailBuilder()
-            .setURL(client.user.displayAvatarURL({ size: 1024 }))
-            .setDescription(title)
-        )
-    )
-    .addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-    );
-}
-
-function createQueueContainer(player, guild, user) {
-  const queue = player.queue ?? [];
+function createQueueContainer(player) {
+  const queue = player.queue || [];
   const current = player.current;
+
   let description = '';
 
   if (current?.info) {
-    description += `**Lecture en cours:**\n**[${current.info.title}](${current.info.uri})**\n${current.info.author || 'inconnue'} • ${formatTime(current.info.length)} • <@${current.info.requester}>\n\n`;
+    description +=
+      `**Lecture en cours :**\n` +
+      `**[${current.info.title || 'Titre inconnu'}](${current.info.uri || 'https://youtube.com'})**\n` +
+      `${current.info.author || 'Inconnu'} • ` +
+      `${formatTime(current.info.length || 0)} • ` +
+      `<@${current.info.requester || client.user.id}>\n\n`;
   }
 
   if (queue.length > 0) {
-    description += `**À suivre:**\n`;
+    description += '**À suivre :**\n';
+
     const upcoming = queue.slice(0, 10);
-    upcoming.forEach((t, i) => {
-      const inf = t.info || {};
-      description += `\`${i + 1}.\` **[${inf.title}](${inf.uri})**\n${inf.author || 'inconnue'} • ${formatTime(inf.length || 0)} • <@${t.info.requester}>\n`;
+
+    upcoming.forEach((track, index) => {
+      const info = track.info || {};
+
+      description +=
+        `\`${index + 1}.\` **[${info.title || 'Titre inconnu'}](${info.uri || 'https://youtube.com'})**\n` +
+        `${info.author || 'Inconnu'} • ` +
+        `${formatTime(info.length || 0)} • ` +
+        `<@${info.requester || client.user.id}>\n`;
     });
+
     if (queue.length > 10) {
-      description += `\n*...et ${queue.length - 10} plus de piste(s)*`;
+      description +=
+        `\n*... et ${queue.length - 10} autre(s) piste(s)*`;
     }
-  } else if (!current) {
-    description = 'La file attente est actuellement vide.';
   }
 
-  description += `\n\n**Boucle:** ${(!player.loop || player.loop === 'non') ? 'off' : player.loop} | **Total:** ${player.queue.length + 1} tracks`;
+  if (
+    queue.length === 0 &&
+    !current
+  ) {
+    description =
+      'La file d’attente est actuellement vide.';
+  }
 
-  let thumbnail = client.user.displayAvatarURL({ size: 1024 });
+  const loop =
+    !player.loop ||
+    player.loop === 'none'
+      ? 'Désactivée'
+      : player.loop;
+
+  description +=
+    `\n\n**Boucle :** ${loop}` +
+    ` | **Total :** ${queue.length + (current ? 1 : 0)}`;
 
   return new ContainerBuilder()
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
           new TextDisplayBuilder()
-            .setContent(`## ${config.emojis.queue} Queue\n${description}`)
+            .setContent(
+              `## ${config.emojis.queue} File d'attente\n${description}`
+            )
         )
         .setThumbnailAccessory(
           new ThumbnailBuilder()
-            .setURL(thumbnail)
-            .setDescription('Queue')
+            .setURL(getUserAvatar())
+            .setDescription(
+              'File d’attente'
+            )
         )
     )
     .addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      new SeparatorBuilder()
+        .setSpacing(
+          SeparatorSpacingSize.Small
+        )
+        .setDivider(true)
     );
 }
+
+// ============================================================
+// STATS
+// ============================================================
 
 function createStatsContainer() {
-  const uptime = formatTime(client.uptime);
-  const players = riffy.players.size;
-  const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
-  const memory = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+  const uptime = formatTime(
+    client.uptime || 0
+  );
 
-  const description = `**Servers:** ${client.guilds.cache.size}\n**Utilisateur/trice:** ${totalUsers}\n**Joueurs:** ${players}\n**Uptime:** ${uptime}\n**Ping:** ${client.ws.ping}ms\n**Memory:** ${memory} MB`;
+  const players =
+    riffy.players.size;
+
+  const totalUsers =
+    client.guilds.cache.reduce(
+      (total, guild) =>
+        total + guild.memberCount,
+      0
+    );
+
+  const memory =
+    (
+      process.memoryUsage()
+        .heapUsed /
+      1024 /
+      1024
+    ).toFixed(2);
+
+  const description =
+    `**Serveurs :** ${client.guilds.cache.size}\n` +
+    `**Utilisateurs :** ${totalUsers}\n` +
+    `**Lecteurs :** ${players}\n` +
+    `**Uptime :** ${uptime}\n` +
+    `**Ping :** ${client.ws.ping}ms\n` +
+    `**Mémoire :** ${memory} MB\n` +
+    `**Lavalink :** ${
+      isLavalinkConnected
+        ? '🟢 Connecté'
+        : '🔴 Déconnecté'
+    }`;
 
   return new ContainerBuilder()
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
           new TextDisplayBuilder()
-            .setContent(`## ${config.emojis.info} Bot Statistics\n${description}`)
+            .setContent(
+              `## ${config.emojis.info} Statistiques\n${description}`
+            )
         )
         .setThumbnailAccessory(
           new ThumbnailBuilder()
-            .setURL(client.user.displayAvatarURL({ size: 1024 }))
-            .setDescription('Bot Avatar')
+            .setURL(getUserAvatar())
+            .setDescription(
+              'Statistiques du bot'
+            )
         )
     )
     .addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      new SeparatorBuilder()
+        .setSpacing(
+          SeparatorSpacingSize.Small
+        )
+        .setDivider(true)
     );
 }
 
-function createHelpContainer() {
-  const lavalinkStatus = isLavalinkConnected ? '🟢 Connecter' : '🔴 Déconnecter';
+// ============================================================
+// HELP
+// ============================================================
 
-  const description = `Un bot de musique puissant avec un son de haute qualité\n\n**Total Commands:** 17\n**Prefix:** \`${config.prefix}\`\n**Lavalink:** ${lavalinkStatus}\nCrée par **Tasix.226**\n\n**${config.emojis.music} Music Commands**\n**play** (p) - Play a song\n**pause** (pa) - Pause current song\n**resume** (r, res) - Resume playback\n**skip** (s, next) - Skip current song\n**stop** (st, leave) - Stop player\n**nowplaying** (np) - Show current song\n**queue** (q) - Show queue\n**loop** (l, repeat) - Loop mode\n**shuffle** (sh, mix) - Shuffle queue\n**volume** (v, vol) - Set volume\n**clearqueue** (cq, clear) - Clear queue\n**remove** (rm, delete) - Remove from queue\n**move** (mv) - Move in queue\n**247** (24/7, stay) - Toggle 24/7\n\n**${config.emojis.info} Utility Commands**\n**stats** (status, info) - Bot stats\n**ping** (latency) - Bot ping\n**invite** (inv) - Invite link\n**support** (server) - Support server\n**help** (h, cmd) - This message`;
+function createHelpContainer() {
+  const lavalinkStatus =
+    isLavalinkConnected
+      ? '🟢 Connecté'
+      : '🔴 Déconnecté';
+
+  const description =
+    `Un bot de musique puissant avec un son de haute qualité.\n\n` +
+    `**Commandes :** 17\n` +
+    `**Préfixe :** \`${config.prefix}\`\n` +
+    `**Lavalink :** ${lavalinkStatus}\n` +
+    `**Créé par :** Tasix.226\n\n` +
+
+    `**${config.emojis.music} Commandes musique**\n` +
+    `**play** (p) — Lire une musique\n` +
+    `**pause** (pa) — Mettre en pause\n` +
+    `**resume** (r, res) — Reprendre\n` +
+    `**skip** (s, next) — Passer la musique\n` +
+    `**stop** (st, leave) — Arrêter\n` +
+    `**nowplaying** (np) — Musique actuelle\n` +
+    `**queue** (q) — Voir la file\n` +
+    `**loop** (l, repeat) — Mode répétition\n` +
+    `**shuffle** (sh, mix) — Mélanger\n` +
+    `**volume** (v, vol) — Régler le volume\n` +
+    `**clearqueue** (cq, clear) — Vider la file\n` +
+    `**remove** (rm, delete) — Supprimer une piste\n` +
+    `**move** (mv) — Déplacer une piste\n` +
+    `**247** (24/7, stay) — Mode 24/7\n\n` +
+
+    `**${config.emojis.info} Commandes utilitaires**\n` +
+    `**stats** — Statistiques\n` +
+    `**ping** — Latence\n` +
+    `**invite** — Inviter le bot\n` +
+    `**support** — Serveur support\n` +
+    `**help** — Afficher cette aide`;
+
+  const invite =
+    `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}` +
+    `&permissions=3165184&scope=bot%20applications.commands`;
 
   return new ContainerBuilder()
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
           new TextDisplayBuilder()
-            .setContent(`## ${client.user.username} Help\n${description}`)
+            .setContent(
+              `## ${client.user.username} — Aide\n${description}`
+            )
         )
         .setThumbnailAccessory(
           new ThumbnailBuilder()
-            .setURL(client.user.displayAvatarURL({ size: 1024 }))
-            .setDescription('Bot Avatar')
+            .setURL(getUserAvatar())
+            .setDescription(
+              'Avatar du bot'
+            )
         )
     )
     .addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+      new SeparatorBuilder()
+        .setSpacing(
+          SeparatorSpacingSize.Small
+        )
+        .setDivider(true)
     )
     .addActionRowComponents(
       new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
-            .setLabel('Invite Me')
-            .setStyle(ButtonStyle.Link)
-            .setURL(`https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=3165184&scope=bot%20applications.commands`),
+            .setLabel('Inviter le bot')
+            .setStyle(
+              ButtonStyle.Link
+            )
+            .setURL(invite),
+
           new ButtonBuilder()
             .setLabel('Support')
-            .setStyle(ButtonStyle.Link)
-            .setURL(config.supportServer)
+            .setStyle(
+              ButtonStyle.Link
+            )
+            .setURL(
+              config.supportServer
+            )
         )
     );
 }
 
-riffy.on('trackStart', async (player, track) => {
-  const channel = client.channels.cache.get(player.textChannel);
-  if (!channel) return;
+// ============================================================
+// COMMANDES SLASH
+// ============================================================
 
-  const container = createNowPlayingContainer(player, track);
+const commands = [
+  {
+    name: 'play',
+    description: 'Lire une musique',
+    options: [
+      {
+        name: 'query',
+        description:
+          'Nom de la musique ou URL',
+        type: 3,
+        required: true
+      }
+    ]
+  },
 
-  try {
-    const msg = await channel.send({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-    nowPlayingMessages.set(player.guildId, msg);
-  } catch (err) {
-    console.error('Échec de envoi du message En cours de lecture:', err);
+  {
+    name: 'pause',
+    description:
+      'Mettre la musique en pause'
+  },
+
+  {
+    name: 'resume',
+    description:
+      'Reprendre la musique'
+  },
+
+  {
+    name: 'skip',
+    description:
+      'Passer à la musique suivante'
+  },
+
+  {
+    name: 'stop',
+    description:
+      'Arrêter et vider la file'
+  },
+
+  {
+    name: 'volume',
+    description:
+      'Régler le volume',
+    options: [
+      {
+        name: 'level',
+        description:
+          'Volume entre 1 et 100',
+        type: 4,
+        required: true,
+        min_value: 1,
+        max_value: 100
+      }
+    ]
+  },
+
+  {
+    name: 'queue',
+    description:
+      'Afficher la file d’attente'
+  },
+
+  {
+    name: 'nowplaying',
+    description:
+      'Afficher la musique actuelle'
+  },
+
+  {
+    name: 'shuffle',
+    description:
+      'Mélanger la file'
+  },
+
+  {
+    name: 'loop',
+    description:
+      'Configurer la répétition',
+    options: [
+      {
+        name: 'mode',
+        description:
+          'Mode de répétition',
+        type: 3,
+        required: true,
+        choices: [
+          {
+            name: 'Désactivé',
+            value: 'none'
+          },
+          {
+            name: 'Musique',
+            value: 'track'
+          },
+          {
+            name: 'File d’attente',
+            value: 'queue'
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    name: 'remove',
+    description:
+      'Supprimer une piste',
+    options: [
+      {
+        name: 'position',
+        description:
+          'Position dans la file',
+        type: 4,
+        required: true,
+        min_value: 1
+      }
+    ]
+  },
+
+  {
+    name: 'move',
+    description:
+      'Déplacer une piste',
+    options: [
+      {
+        name: 'from',
+        description:
+          'Position actuelle',
+        type: 4,
+        required: true,
+        min_value: 1
+      },
+      {
+        name: 'to',
+        description:
+          'Nouvelle position',
+        type: 4,
+        required: true,
+        min_value: 1
+      }
+    ]
+  },
+
+  {
+    name: 'clearqueue',
+    description:
+      'Vider la file d’attente'
+  },
+
+  {
+    name: '247',
+    description:
+      'Activer ou désactiver le mode 24/7'
+  },
+
+  {
+    name: 'stats',
+    description:
+      'Afficher les statistiques'
+  },
+
+  {
+    name: 'ping',
+    description:
+      'Afficher la latence'
+  },
+
+  {
+    name: 'invite',
+    description:
+      'Obtenir le lien d’invitation'
+  },
+
+  {
+    name: 'support',
+    description:
+      'Obtenir le lien du support'
+  },
+
+  {
+    name: 'help',
+    description:
+      'Afficher toutes les commandes'
   }
-});
+];
 
-riffy.on('queueEnd', async (player) => {
-  const channel = client.channels.cache.get(player.textChannel);
+// ============================================================
+// READY
+// ============================================================
 
-  const msg = nowPlayingMessages.get(player.guildId);
-  if (msg && player.current) {
+client.once(
+  'clientReady',
+  async () => {
+    console.log(
+      `${config.emojis.success} Connecté en tant que ${client.user.tag}`
+    );
+
     try {
-      const disabledContainer = createNowPlayingContainer(player, player.current, true);
-      await msg.edit({ components: [disabledContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-    } catch (error) {
-      console.error('Impossible de désactiver les boutons:', error);
-    }
-    nowPlayingMessages.delete(player.guildId);
-  }
+      riffy.init(client.user.id);
 
-  if (queue247.has(player.guildId)) {
+      console.log(
+        `${config.emojis.success} Riffy initialisé`
+      );
+    } catch (error) {
+      console.error(
+        `${config.emojis.error} Erreur Riffy :`,
+        error
+      );
+    }
+
+    const activityTypes = {
+      PLAYING:
+        ActivityType.Playing,
+
+      LISTENING:
+        ActivityType.Listening,
+
+      WATCHING:
+        ActivityType.Watching,
+
+      STREAMING:
+        ActivityType.Streaming,
+
+      COMPETING:
+        ActivityType.Competing
+    };
+
+    const activityType =
+      activityTypes[
+        config.activity.type
+      ] ||
+      ActivityType.Listening;
+
+    client.user.setActivity(
+      config.activity.name,
+      {
+        type: activityType
+      }
+    );
+
+    console.log(
+      `${config.emojis.success} Activité : ${config.activity.name}`
+    );
+
+    try {
+      await client.application.commands.set(
+        commands
+      );
+
+      console.log(
+        `${config.emojis.success} Commandes slash enregistrées`
+      );
+    } catch (error) {
+      console.error(
+        `${config.emojis.error} Erreur commandes slash :`,
+        error
+      );
+    }
+  }
+);
+
+// ============================================================
+// RIFFY VOICE STATE
+// ============================================================
+
+client.on(
+  'raw',
+  (data) => {
+    riffy.updateVoiceState(data);
+  }
+);
+
+// ============================================================
+// LAVALINK EVENTS
+// ============================================================
+
+riffy.on(
+  'nodeConnect',
+  (node) => {
+    isLavalinkConnected = true;
+
+    console.log(
+      `${config.emojis.success} Lavalink connecté : ${node.name}`
+    );
+  }
+);
+
+riffy.on(
+  'nodeError',
+  (node, error) => {
+    isLavalinkConnected = false;
+
+    console.error(
+      `${config.emojis.error} Lavalink erreur (${node.name}) :`,
+      error
+    );
+  }
+);
+
+riffy.on(
+  'nodeDisconnect',
+  (node) => {
+    isLavalinkConnected = false;
+
+    console.log(
+      `${config.emojis.error} Lavalink déconnecté : ${node.name}`
+    );
+  }
+);
+
+// ============================================================
+// TRACK START
+// ============================================================
+
+riffy.on(
+  'trackStart',
+  async (player, track) => {
+    const channel =
+      client.channels.cache.get(
+        player.textChannel
+      );
+
+    if (!channel) {
+      return;
+    }
+
+    const container =
+      createNowPlayingContainer(
+        player,
+        track
+      );
+
+    try {
+      const message =
+        await sendComponentsV2(
+          channel,
+          container
+        );
+
+      nowPlayingMessages.set(
+        player.guildId,
+        message
+      );
+    } catch (error) {
+      console.error(
+        `${config.emojis.error} Impossible d'envoyer Now Playing :`,
+        error
+      );
+    }
+  }
+);
+
+// ============================================================
+// QUEUE END
+// ============================================================
+
+riffy.on(
+  'queueEnd',
+  async (player) => {
+    const channel =
+      client.channels.cache.get(
+        player.textChannel
+      );
+
+    const message =
+      nowPlayingMessages.get(
+        player.guildId
+      );
+
+    if (message) {
+      try {
+        if (player.current) {
+          const container =
+            createNowPlayingContainer(
+              player,
+              player.current,
+              true
+            );
+
+          await message.edit({
+            components: [container],
+            flags:
+              MessageFlags.IsPersistent |
+              MessageFlags.IsComponentsV2
+          });
+        }
+      } catch (error) {
+        console.error(
+          `${config.emojis.error} Impossible de désactiver les boutons :`,
+          error
+        );
+      }
+
+      nowPlayingMessages.delete(
+        player.guildId
+      );
+    }
+
+    if (
+      queue247.has(player.guildId)
+    ) {
+      if (channel) {
+        const container =
+          createSimpleContainer(
+            'Mode 24/7',
+            'La file est terminée, mais je reste connecté au vocal.',
+            config.emojis.info
+          );
+
+        await sendComponentsV2(
+          channel,
+          container
+        );
+      }
+
+      return;
+    }
+
     if (channel) {
-      const container = createSimpleContainerNoButtons('24/7 Mode', 'La file est terminée mais je reste en mode 24/7', config.emojis.info);
-      await channel.send({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-    }
-    return;
-  }
-
-  if (channel) {
-    const container = createSimpleContainerNoButtons('File terminée', 'File terminée, je quitte le vocal', config.emojis.success);
-    await channel.send({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-  }
-
-  player.destroy();
-});
-
-client.on('interactionCreate', async (interaction) => {
-  if (interaction.isButton()) {
-    const player = riffy.players.get(interaction.guildId);
-
-    if (!player) {
-      return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-    }
-
-    const member = interaction.member;
-    if (!member.voice.channel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans un canal vocal`, ephemeral: true });
-    }
-
-    if (member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-    }
-
-    switch (interaction.customId) {
-      case 'pause':
-      case 'resume': {
-        const message = nowPlayingMessages.get(player.guildId);
-        const shouldPause = interaction.customId === 'pause';
-        await player.pause(shouldPause);
-
-        if (message && player.current) {
-          const updatedContainer = createNowPlayingContainer(player, player.current);
-          await message.edit({ components: [updatedContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 }).catch(() => {});
-        }
-
-        await interaction.reply({ 
-          content: shouldPause ? `${config.emojis.pause} Pause` : `${config.emojis.play} Resumer`, 
-          ephemeral: true 
-        });
-        break;
-      }
-
-      case 'skip': {
-        player.stop();
-        const disabledContainer = createNowPlayingContainer(player, player.current, true);
-        await interaction.message.edit({ components: [disabledContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-        await interaction.reply({ content: `${config.emojis.skip} Skipped`, ephemeral: true });
-        break;
-      }
-
-      case 'stop': {
-        const disabledContainer = createNowPlayingContainer(player, player.current, true);
-        await interaction.message.edit({ components: [disabledContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-        player.destroy();
-        await interaction.reply({ content: `${config.emojis.stop} Stopper`, ephemeral: true });
-        break;
-      }
-
-      case 'shuffle': {
-        if (player.queue.length === 0) {
-          return interaction.reply({ content: `${config.emojis.error} La file est vide`, ephemeral: true });
-        }
-        player.queue.shuffle();
-        await interaction.reply({ content: `${config.emojis.shuffle} File d'attente mélangée`, ephemeral: true });
-        break;
-      }
-
-      case 'loop': {
-        const modes = ['aucun', 'piste', 'file attente'];
-        const currentMode = player.loop || 'none';
-        const nextMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
-        player.setLoop(nextMode);
-        const loopLabel = nextMode === 'none' ? 'off' : nextMode;
-
-        const loopMsg = nowPlayingMessages.get(player.guildId);
-        if (loopMsg && player.current) {
-          const updatedContainer = createNowPlayingContainer(player, player.current);
-          await loopMsg.edit({ components: [updatedContainer], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 }).catch(() => {});
-        }
-
-        await interaction.reply({ content: `${config.emojis.loop} Boucle réglée sur: ${loopLabel}`, ephemeral: true });
-        break;
-      }
-
-      case 'queue': {
-        const queueContainer = createQueueContainer(player, interaction.guild, interaction.user);
-        await interaction.reply({ components: [queueContainer], flags: MessageFlags.IsComponentsV2, ephemeral: true });
-        break;
-      }
-    }
-  }
-
-  if (!interaction.isChatInputCommand()) return;
-
-  const { commandName, options, member, guild, channel } = interaction;
-
-  if (commandName === 'play') {
-    const query = options.getString('query');
-
-    if (!member.voice.channel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans un canal vocal`, ephemeral: true });
-    }
-
-    if (!isLavalinkConnected) {
-      return interaction.reply({ content: `${config.emojis.error} Lavalink n'est pas connecté. Les commandes de musique ne sont pas disponibles.`, ephemeral: true });
-    }
-
-    await interaction.deferReply();
-
-    try {
-      let player = riffy.players.get(guild.id);
-
-      if (!player) {
-        player = riffy.createConnection({
-          guildId: guild.id,
-          voiceChannel: member.voice.channel.id,
-          textChannel: channel.id,
-          deaf: true
-        });
-      }
-
-      const resolve = await riffy.resolve({ query, requester: member.user.id });
-
-      if (!resolve || !resolve.tracks.length) {
-        return interaction.editReply({ content: `${config.emojis.error} Aucun résultat trouvé` });
-      }
-
-      if (resolve.loadType === 'playlist') {
-        for (const track of resolve.tracks) {
-          track.info.requester = member.user.id;
-          player.queue.add(track);
-        }
-
-        const container = createSimpleContainerNoButtons(
-          'Playlist Added',
-          `Added playlist **${resolve.playlistInfo.name}** (${resolve.tracks.length} tracks)`,
+      const container =
+        createSimpleContainer(
+          'File terminée',
+          'La file est terminée. Je quitte le canal vocal.',
           config.emojis.success
         );
 
-        await interaction.editReply({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-      } else if (resolve.loadType === 'search' || resolve.loadType === 'track') {
-        const track = resolve.tracks[0];
-        track.info.requester = member.user.id;
-        player.queue.add(track);
-
-        const container = createSimpleContainerNoButtons(
-          'Added to Queue',
-          `[${track.info.title}](${track.info.uri})`,
-          config.emojis.success
-        );
-
-        await interaction.editReply({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-      } else {
-        return interaction.editReply({ content: `${config.emojis.error} Aucun résultat trouvé` });
-      }
-
-      if (!player.playing && !player.paused) player.play();
-    } catch (error) {
-      console.error('Play command error:', error);
-      await interaction.editReply({ content: `${config.emojis.error} Une erreur s'est produite lors de la lecture de la chanson` });
-    }
-  }
-
-  if (commandName === 'pause') {
-    const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-    if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-    }
-
-    player.pause(true);
-    const container = createSimpleContainer('Paused', 'Playback paused', config.emojis.pause);
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-  }
-
-  if (commandName === 'resume') {
-    const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-    if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-    }
-
-    player.pause(false);
-    const container = createSimpleContainer('Resumed', 'Playback resumed', config.emojis.play);
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-  }
-
-  if (commandName === 'skip') {
-    const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-    if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-    }
-
-    player.stop();
-    const container = createSimpleContainer('Skipped', 'Passé à la piste suivante', config.emojis.skip);
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-  }
-
-  if (commandName === 'stop') {
-    const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} `, ephemeral: true });
-    if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
+      await sendComponentsV2(
+        channel,
+        container
+      );
     }
 
     player.destroy();
-    const container = createSimpleContainer('Stopped', 'Arrêté et file attente vidée', config.emojis.stop);
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
   }
+);
 
-  if (commandName === 'volume') {
-    const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} Stopped et file attente vidée`, ephemeral: true });
-    if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-      return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-    }
+// ============================================================
+// INTERACTIONS
+// ============================================================
 
-    const volume = options.getInteger('level');
-    player.setVolume(volume);
-    const container = createSimpleContainer('Volume Set', `Volume set to ${volume}%`, config.emojis.volume);
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-  }
+client.on(
+  'interactionCreate',
+  async (interaction) => {
 
-  if (commandName === 'queue') {
-    const player = riffy.players.get(guild.id);
-    if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
+    // ========================================================
+    // BOUTONS
+    // ========================================================
 
-    if (player.queue.length === 0 && !player.current) {
-      return interaction.reply({ content: `${config.emojis.error} La file est vide`, ephemeral: true });
-    }
+    if (interaction.isButton()) {
+      const player =
+        riffy.players.get(
+          interaction.guildId
+        );
 
-    const queueContainer = createQueueContainer(player, guild, interaction.user);
-    await interaction.reply({ components: [queueContainer], flags: MessageFlags.IsComponentsV2 });
-  }
-
-  if (commandName === 'nowplaying') {
-    const player = riffy.players.get(guild.id);
-    if (!player || !player.current) {
-      return interaction.reply({ content: `${config.emojis.error} Rien ne joue`, ephemeral: true });
-    }
-
-    const info = player.current.info ?? {};
-    let thumbnail = info.artworkUrl || info.thumbnail || null;
-
-    if (!thumbnail && info.uri && info.uri.includes('youtube.com')) {
-      const videoId = info.uri.split('v=')[1]?.split('&')[0];
-      if (videoId) {
-        thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      if (!player) {
+        return interaction.reply({
+          content:
+            `${config.emojis.error} Aucun lecteur trouvé.`,
+          ephemeral: true
+        });
       }
-    }
 
-    if (!thumbnail && info.uri && info.uri.includes('youtu.be')) {
-      const videoId = info.uri.split('youtu.be/')[1]?.split('?')[0];
-      if (videoId) {
-        thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      const member =
+        interaction.member;
+
+      if (
+        !member.voice?.channel
+      ) {
+        return interaction.reply({
+          content:
+            `${config.emojis.error} Tu dois être dans un canal vocal.`,
+          ephemeral: true
+        });
       }
-    }
 
-    if (!thumbnail) {
-      thumbnail = 'https://i.imgur.com/QYJfXQv.png';
-    }
+      if (
+        member.voice.channel.id !==
+        player.voiceChannel
+      ) {
+        return interaction.reply({
+          content:
+            `${config.emojis.error} Tu dois être dans le même canal vocal.`,
+          ephemeral: true
+        });
+      }
 
-    const currentPosition = player.position || 0;
-    const totalDuration = info.length || 0;
-    const status = player.paused ? '⏸️ Pause' : '▶️ Jouer';
+      try {
+        switch (
+          interaction.customId
+        ) {
 
-          const description = `**[${info.title || 'Unknown Title'}](${info.uri || 'https://youtube.com'})**\n\n**Status:** ${status}\n**Current Duration:** ${formatTime(currentPosition)} / ${formatTime(totalDuration)}\n**Requested By:** <@${player.current.info.requester}>\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop}`;
+          case 'pause': {
+            await player.pause(true);
 
-          const container = new ContainerBuilder()
-            .addSectionComponents(
-              new SectionBuilder()
-                .addTextDisplayComponents(
-                  new TextDisplayBuilder()
-                    .setContent(`## ${config.emojis.music} Lecture en cours\n${description}`)
-                )
-                .setThumbnailAccessory(
-                  new ThumbnailBuilder()
-                    .setURL(thumbnail)
-                    .setDescription(info.title || 'Song Thumbnail')
-                )
-            )
-            .addSeparatorComponents(
-              new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-            );
+            await interaction.reply({
+              content:
+                `${config.emojis.pause} Musique mise en pause.`,
+              ephemeral: true
+            });
 
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (commandName === 'shuffle') {
-          const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-          if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-          }
-          if (player.queue.length === 0) {
-            return interaction.reply({ content: `${config.emojis.error} La file est vide`, ephemeral: true });
+            break;
           }
 
-          player.queue.shuffle();
-          const container = createSimpleContainer('Shuffled', 'A mélangé la file attente', config.emojis.shuffle);
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
+          case 'resume': {
+            await player.pause(false);
 
-        if (commandName === 'loop') {
-          const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-          if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
+            await interaction.reply({
+              content:
+                `${config.emojis.play} Lecture reprise.`,
+              ephemeral: true
+            });
+
+            break;
           }
 
-          const mode = options.getString('mode');
-          player.setLoop(mode);
-          const container = createSimpleContainer('Loop Set', `Boucle réglée sur: ${mode}`, config.emojis.loop);
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
+          case 'skip': {
+            player.stop();
 
-        if (commandName === 'remove') {
-          const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} No player found`, ephemeral: true });
-          if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
+            await interaction.reply({
+              content:
+                `${config.emojis.skip} Musique suivante.`,
+              ephemeral: true
+            });
+
+            break;
           }
 
-          const position = options.getInteger('position') - 1;
-          if (position < 0 || position >= player.queue.length) {
-            return interaction.reply({ content: `${config.emojis.error} Position invalide`, ephemeral: true });
+          case 'stop': {
+            player.destroy();
+
+            await interaction.reply({
+              content:
+                `${config.emojis.stop} Lecture arrêtée.`,
+              ephemeral: true
+            });
+
+            break;
           }
 
-          const removed = player.queue.remove(position);
-          const container = createSimpleContainer('Removed', `Retirer: ${removed.info.title}`, config.emojis.success);
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (commandName === 'move') {
-          const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-          if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-          }
-
-          const from = options.getInteger('from') - 1;
-          const to = options.getInteger('to') - 1;
-
-          if (from < 0 || from >= player.queue.length || to < 0 || to >= player.queue.length) {
-            return interaction.reply({ content: `${config.emojis.error} Positions invalides`, ephemeral: true });
-          }
-
-          const track = player.queue.remove(from);
-          player.queue.splice(to, 0, track);
-          const container = createSimpleContainer('Moved', `Moov: ${track.info.title}`, config.emojis.success);
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (commandName === 'clearqueue') {
-          const player = riffy.players.get(guild.id);
-          if (!player) return interaction.reply({ content: `${config.emojis.error} Aucun joueur trouvé`, ephemeral: true });
-          if (!member.voice.channel || member.voice.channel.id !== player.voiceChannel) {
-            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans le même canal vocal`, ephemeral: true });
-          }
-
-          player.queue.clear();
-          const container = createSimpleContainer('Queue Cleared', 'File attente vidée', config.emojis.success);
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (commandName === '247') {
-          const player = riffy.players.get(guild.id);
-          if (!member.voice.channel) {
-            return interaction.reply({ content: `${config.emojis.error} Tu dois être dans un canal vocal`, ephemeral: true });
-          }
-
-          if (queue247.has(guild.id)) {
-            queue247.delete(guild.id);
-            const container = createSimpleContainer('24/7 Désactiver', '24/7 mode Désactiver', config.emojis.success);
-            await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          } else {
-            queue247.add(guild.id);
-
-            if (!player) {
-              riffy.createConnection({
-                guildId: guild.id,
-                voiceChannel: member.voice.channel.id,
-                textChannel: channel.id,
-                deaf: true
+          case 'shuffle': {
+            if (
+              player.queue.length === 0
+            ) {
+              return interaction.reply({
+                content:
+                  `${config.emojis.error} La file est vide.`,
+                ephemeral: true
               });
             }
 
-            const container = createSimpleContainer('24/7 Activé', '24/7 mode Activé', config.emojis.success);
-            await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+            player.queue.shuffle();
+
+            await interaction.reply({
+              content:
+                `${config.emojis.shuffle} File mélangée.`,
+              ephemeral: true
+            });
+
+            break;
+          }
+
+          case 'loop': {
+            const modes = [
+              'none',
+              'track',
+              'queue'
+            ];
+
+            const current =
+              player.loop || 'none';
+
+            const index =
+              modes.indexOf(current);
+
+            const next =
+              modes[
+                (index + 1) %
+                modes.length
+              ];
+
+            player.setLoop(next);
+
+            await interaction.reply({
+              content:
+                `${config.emojis.loop} Boucle : ${next}`,
+              ephemeral: true
+            });
+
+            break;
+          }
+
+          case 'queue': {
+            const container =
+              createQueueContainer(
+                player
+              );
+
+            await interaction.reply({
+              components: [container],
+              flags:
+                MessageFlags.IsComponentsV2,
+              ephemeral: true
+            });
+
+            break;
           }
         }
+      } catch (error) {
+        console.error(
+          'Erreur bouton :',
+          error
+        );
 
-        if (commandName === 'stats') {
-          const statsContainer = createStatsContainer();
-          await interaction.reply({ components: [statsContainer], flags: MessageFlags.IsComponentsV2 });
+        if (
+          !interaction.replied &&
+          !interaction.deferred
+        ) {
+          await interaction.reply({
+            content:
+              `${config.emojis.error} Une erreur est survenue.`,
+            ephemeral: true
+          });
+        }
+      }
+
+      return;
+    }
+
+    // ========================================================
+    // SLASH COMMANDS
+    // ========================================================
+
+    if (
+      !interaction.isChatInputCommand()
+    ) {
+      return;
+    }
+
+    const {
+      commandName,
+      options,
+      member,
+      guild,
+      channel
+    } = interaction;
+
+    try {
+
+      // ======================================================
+      // PLAY
+      // ======================================================
+
+      if (
+        commandName === 'play'
+      ) {
+        const query =
+          options.getString(
+            'query'
+          );
+
+        if (
+          !member.voice?.channel
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Tu dois être dans un canal vocal.`,
+            ephemeral: true
+          });
         }
 
-        if (commandName === 'ping') {
-          const container = createSimpleContainer('Pong!', `Latency: ${client.ws.ping}ms`, config.emojis.info);
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+        if (
+          !isLavalinkConnected
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Lavalink n'est pas connecté.`,
+            ephemeral: true
+          });
         }
 
-        if (commandName === 'invite') {
-          const invite = `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=3165184&scope=bot%20applications.commands`;
+        await interaction.deferReply();
 
-          const container = new ContainerBuilder()
+        let player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          player =
+            riffy.createConnection({
+              guildId: guild.id,
+              voiceChannel:
+                member.voice.channel.id,
+              textChannel:
+                channel.id,
+              deaf: true
+            });
+        }
+
+        const result =
+          await riffy.resolve({
+            query,
+            requester:
+              interaction.user.id
+          });
+
+        if (
+          !result ||
+          !result.tracks ||
+          result.tracks.length === 0
+        ) {
+          return interaction.editReply({
+            content:
+              `${config.emojis.error} Aucun résultat trouvé.`
+          });
+        }
+
+        if (
+          result.loadType ===
+          'playlist'
+        ) {
+          for (
+            const track of result.tracks
+          ) {
+            track.info.requester =
+              interaction.user.id;
+
+            player.queue.add(track);
+          }
+
+          const container =
+            createSimpleContainer(
+              'Playlist ajoutée',
+              `**${result.playlistInfo?.name || 'Playlist'}** — ${result.tracks.length} piste(s) ajoutée(s).`,
+              config.emojis.success
+            );
+
+          await interaction.editReply({
+            components: [container],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        } else {
+          const track =
+            result.tracks[0];
+
+          track.info.requester =
+            interaction.user.id;
+
+          player.queue.add(track);
+
+          const container =
+            createSimpleContainer(
+              'Musique ajoutée',
+              `**[${track.info.title}](${track.info.uri})**`,
+              config.emojis.success
+            );
+
+          await interaction.editReply({
+            components: [container],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+
+        if (
+          !player.playing &&
+          !player.paused
+        ) {
+          player.play();
+        }
+
+        return;
+      }
+
+      // ======================================================
+      // COMMANDES LECTURE
+      // ======================================================
+
+      if (
+        [
+          'pause',
+          'resume',
+          'skip',
+          'stop'
+        ].includes(commandName)
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        if (
+          !member.voice?.channel ||
+          member.voice.channel.id !==
+          player.voiceChannel
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Tu dois être dans le même canal vocal.`,
+            ephemeral: true
+          });
+        }
+
+        if (
+          commandName === 'pause'
+        ) {
+          player.pause(true);
+
+          return interaction.reply({
+            components: [
+              createSimpleContainer(
+                'Pause',
+                'La musique est en pause.',
+                config.emojis.pause
+              )
+            ],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+
+        if (
+          commandName === 'resume'
+        ) {
+          player.pause(false);
+
+          return interaction.reply({
+            components: [
+              createSimpleContainer(
+                'Lecture reprise',
+                'La musique reprend.',
+                config.emojis.play
+              )
+            ],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+
+        if (
+          commandName === 'skip'
+        ) {
+          player.stop();
+
+          return interaction.reply({
+            components: [
+              createSimpleContainer(
+                'Musique suivante',
+                'Passage à la piste suivante.',
+                config.emojis.skip
+              )
+            ],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+
+        if (
+          commandName === 'stop'
+        ) {
+          player.destroy();
+
+          return interaction.reply({
+            components: [
+              createSimpleContainer(
+                'Lecture arrêtée',
+                'La lecture a été arrêtée et la file vidée.',
+                config.emojis.stop
+              )
+            ],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+      }
+
+      // ======================================================
+      // VOLUME
+      // ======================================================
+
+      if (
+        commandName === 'volume'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        const volume =
+          options.getInteger(
+            'level'
+          );
+
+        player.setVolume(volume);
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'Volume',
+              `Volume réglé sur **${volume}%**.`,
+              config.emojis.volume
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // QUEUE
+      // ======================================================
+
+      if (
+        commandName === 'queue'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        return interaction.reply({
+          components: [
+            createQueueContainer(
+              player
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // NOW PLAYING
+      // ======================================================
+
+      if (
+        commandName === 'nowplaying'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (
+          !player ||
+          !player.current
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucune musique en cours.`,
+            ephemeral: true
+          });
+        }
+
+        return interaction.reply({
+          components: [
+            createNowPlayingContainer(
+              player,
+              player.current
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // SHUFFLE
+      // ======================================================
+
+      if (
+        commandName === 'shuffle'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        if (
+          player.queue.length === 0
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} La file est vide.`,
+            ephemeral: true
+          });
+        }
+
+        player.queue.shuffle();
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'File mélangée',
+              'La file d’attente a été mélangée.',
+              config.emojis.shuffle
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // LOOP
+      // ======================================================
+
+      if (
+        commandName === 'loop'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        const mode =
+          options.getString(
+            'mode'
+          );
+
+        player.setLoop(mode);
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'Boucle',
+              `Mode de répétition : **${mode}**.`,
+              config.emojis.loop
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // REMOVE
+      // ======================================================
+
+      if (
+        commandName === 'remove'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        const position =
+          options.getInteger(
+            'position'
+          ) - 1;
+
+        if (
+          position < 0 ||
+          position >=
+          player.queue.length
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Position invalide.`,
+            ephemeral: true
+          });
+        }
+
+        const removed =
+          player.queue.remove(
+            position
+          );
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'Musique supprimée',
+              `**${removed.info.title}** a été supprimée.`,
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // MOVE
+      // ======================================================
+
+      if (
+        commandName === 'move'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        const from =
+          options.getInteger(
+            'from'
+          ) - 1;
+
+        const to =
+          options.getInteger(
+            'to'
+          ) - 1;
+
+        if (
+          from < 0 ||
+          from >= player.queue.length ||
+          to < 0 ||
+          to >= player.queue.length
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Position invalide.`,
+            ephemeral: true
+          });
+        }
+
+        const track =
+          player.queue.remove(
+            from
+          );
+
+        player.queue.splice(
+          to,
+          0,
+          track
+        );
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'Musique déplacée',
+              `**${track.info.title}** a été déplacée.`,
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // CLEAR QUEUE
+      // ======================================================
+
+      if (
+        commandName === 'clearqueue'
+      ) {
+        const player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Aucun lecteur trouvé.`,
+            ephemeral: true
+          });
+        }
+
+        player.queue.clear();
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'File vidée',
+              'La file d’attente a été vidée.',
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // 24/7
+      // ======================================================
+
+      if (
+        commandName === '247'
+      ) {
+        if (
+          !member.voice?.channel
+        ) {
+          return interaction.reply({
+            content:
+              `${config.emojis.error} Tu dois être dans un canal vocal.`,
+            ephemeral: true
+          });
+        }
+
+        if (
+          queue247.has(guild.id)
+        ) {
+          queue247.delete(
+            guild.id
+          );
+
+          return interaction.reply({
+            components: [
+              createSimpleContainer(
+                'Mode 24/7 désactivé',
+                'Le bot ne restera plus connecté au vocal.',
+                config.emojis.success
+              )
+            ],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+
+        queue247.add(
+          guild.id
+        );
+
+        let player =
+          riffy.players.get(
+            guild.id
+          );
+
+        if (!player) {
+          riffy.createConnection({
+            guildId: guild.id,
+            voiceChannel:
+              member.voice.channel.id,
+            textChannel:
+              channel.id,
+            deaf: true
+          });
+        }
+
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'Mode 24/7 activé',
+              'Le bot restera connecté au canal vocal.',
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // STATS
+      // ======================================================
+
+      if (
+        commandName === 'stats'
+      ) {
+        return interaction.reply({
+          components: [
+            createStatsContainer()
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // PING
+      // ======================================================
+
+      if (
+        commandName === 'ping'
+      ) {
+        return interaction.reply({
+          components: [
+            createSimpleContainer(
+              'Pong !',
+              `Latence : **${client.ws.ping}ms**`,
+              config.emojis.info
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      // ======================================================
+      // INVITE
+      // ======================================================
+
+      if (
+        commandName === 'invite'
+      ) {
+        const invite =
+          `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}` +
+          `&permissions=3165184&scope=bot%20applications.commands`;
+
+        const container =
+          new ContainerBuilder()
             .addSectionComponents(
               new SectionBuilder()
                 .addTextDisplayComponents(
                   new TextDisplayBuilder()
-                    .setContent(`## ${config.emojis.success} Invite le Bot\n[Clique ici pour m'inviter](${invite})`)
+                    .setContent(
+                      `## ${config.emojis.success} Inviter le bot\n[Cliquer ici pour m'inviter](${invite})`
+                    )
                 )
                 .setThumbnailAccessory(
                   new ThumbnailBuilder()
-                    .setURL(client.user.displayAvatarURL({ size: 1024 }))
-                    .setDescription('Invite le Bot')
+                    .setURL(
+                      getUserAvatar()
+                    )
+                    .setDescription(
+                      'Inviter le bot'
+                    )
                 )
             )
             .addSeparatorComponents(
-              new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+              new SeparatorBuilder()
+                .setSpacing(
+                  SeparatorSpacingSize.Small
+                )
+                .setDivider(true)
             )
             .addActionRowComponents(
               new ActionRowBuilder()
                 .addComponents(
                   new ButtonBuilder()
-                    .setLabel('Invite Moi')
-                    .setStyle(ButtonStyle.Link)
+                    .setLabel(
+                      'Inviter le bot'
+                    )
+                    .setStyle(
+                      ButtonStyle.Link
+                    )
                     .setURL(invite)
                 )
             );
 
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
+        return interaction.reply({
+          components: [container],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
 
-        if (commandName === 'support') {
-          const container = new ContainerBuilder()
+      // ======================================================
+      // SUPPORT
+      // ======================================================
+
+      if (
+        commandName === 'support'
+      ) {
+        const container =
+          new ContainerBuilder()
             .addSectionComponents(
               new SectionBuilder()
                 .addTextDisplayComponents(
                   new TextDisplayBuilder()
-                    .setContent(`## ${config.emojis.info} Serveur d'assistance des bots\n[Rejoins notre serveur d’assistance](${config.supportServer})`)
+                    .setContent(
+                      `## ${config.emojis.info} Serveur d'assistance\n[Rejoindre le serveur support](${config.supportServer})`
+                    )
                 )
                 .setThumbnailAccessory(
                   new ThumbnailBuilder()
-                    .setURL(client.user.displayAvatarURL({ size: 1024 }))
-                    .setDescription('Support Server')
+                    .setURL(
+                      getUserAvatar()
+                    )
+                    .setDescription(
+                      'Support'
+                    )
                 )
             )
             .addSeparatorComponents(
-              new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+              new SeparatorBuilder()
+                .setSpacing(
+                  SeparatorSpacingSize.Small
+                )
+                .setDivider(true)
             )
             .addActionRowComponents(
               new ActionRowBuilder()
                 .addComponents(
                   new ButtonBuilder()
-                    .setLabel('Support')
-                    .setStyle(ButtonStyle.Link)
-                    .setURL(config.supportServer)
+                    .setLabel(
+                      'Support'
+                    )
+                    .setStyle(
+                      ButtonStyle.Link
+                    )
+                    .setURL(
+                      config.supportServer
+                    )
                 )
             );
 
-          await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (commandName === 'help') {
-          const helpContainer = createHelpContainer();
-          await interaction.reply({ components: [helpContainer], flags: MessageFlags.IsComponentsV2 });
-        }
-      });
-
-      if (config.enablePrefix) {
-        client.on('messageCreate', async (message) => {
-          if (message.author.bot || !message.guild) return;
-          if (!message.content.startsWith(config.prefix)) return;
-
-          const args = message.content.slice(config.prefix.length).trim().split(/ +/);
-          let command = args.shift().toLowerCase();
-
-          for (const [cmd, aliases] of Object.entries(config.aliases)) {
-            if (aliases.includes(command)) {
-              command = cmd;
-              break;
-            }
-          }
-
-          if (command === 'play') {
-            const query = args.join(' ');
-            if (!query) return message.reply(`${config.emojis.error} Merci de fournir un nom de chanson ou un lien`);
-
-            if (!message.member.voice.channel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans un canal vocal`);
-            }
-
-            if (!isLavalinkConnected) {
-              return message.reply(`${config.emojis.error} Lavalink n'est pas connecté. Les commandes de musique ne sont pas disponibles.`);
-            }
-
-            try {
-              let player = riffy.players.get(message.guild.id);
-
-              if (!player) {
-                player = riffy.createConnection({
-                  guildId: message.guild.id,
-                  voiceChannel: message.member.voice.channel.id,
-                  textChannel: message.channel.id,
-                  deaf: true
-                });
-              }
-
-              const resolve = await riffy.resolve({ query, requester: message.author.id });
-
-              if (!resolve || !resolve.tracks.length) {
-                return message.reply(`${config.emojis.error} Pas de résulta trouver`);
-              }
-
-              if (resolve.loadType === 'playlist') {
-                for (const track of resolve.tracks) {
-                  track.info.requester = message.author.id;
-                  player.queue.add(track);
-                }
-
-                const container = createSimpleContainerNoButtons(
-                  'Playlist ajoutée',
-                  `Ajoutée a la playlist **${resolve.playlistInfo.name}** (${resolve.tracks.length} tracks)`,
-                  config.emojis.success
-                );
-
-                await message.reply({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-              } else if (resolve.loadType === 'search' || resolve.loadType === 'track') {
-                const track = resolve.tracks[0];
-                track.info.requester = message.author.id;
-                player.queue.add(track);
-
-                const container = createSimpleContainerNoButtons(
-                  'Added to Queue',
-                  `[${track.info.title}](${track.info.uri})`,
-                  config.emojis.success
-                );
-
-                await message.reply({ components: [container], flags: MessageFlags.IsPersistent | MessageFlags.IsComponentsV2 });
-              } else {
-                return message.reply(`${config.emojis.error} Aucun résultat trouvé`);
-              }
-
-              if (!player.playing && !player.paused) player.play();
-            } catch (error) {
-              console.error('Erreur de commande de lecture:', error);
-              await message.reply(`${config.emojis.error} Une erreur s'est produite en jouant la chanson`);
-            }
-          }
-
-          if (command === 'pause') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} No player found`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            player.pause(true);
-            const container = createSimpleContainer('Paused', 'Playback paused', config.emojis.pause);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'resume') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            player.pause(false);
-            const container = createSimpleContainer('Resumer', 'Lecture reprise', config.emojis.play);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'skip') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            player.stop();
-            const container = createSimpleContainer('Skipper', 'Passé à la music suivante', config.emojis.skip);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'stop') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            player.destroy();
-            const container = createSimpleContainer('Stopper', 'Arrêté et file attente vidée', config.emojis.stop);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'volume') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            const volume = parseInt(args[0]);
-            if (isNaN(volume) || volume < 1 || volume > 100) {
-              return message.reply(`${config.emojis.error} Veuillez indiquer un volume entre 1 et 100`);
-            }
-
-            player.setVolume(volume);
-            const container = createSimpleContainer('Réglage du volume', `Volume réglé sur ${volume}%`, config.emojis.volume);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'queue') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-
-            if (player.queue.length === 0 && !player.current) {
-              return message.reply(`${config.emojis.error} La file est vide`);
-            }
-
-            const queueContainer = createQueueContainer(player, message.guild, message.author);
-            await message.reply({ components: [queueContainer], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'nowplaying') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player || !player.current) {
-              return message.reply(`${config.emojis.error} Rien ne joue`);
-            }
-
-            const info = player.current.info ?? {};
-            let thumbnail = info.artworkUrl || info.thumbnail || null;
-
-            if (!thumbnail && info.uri && info.uri.includes('youtube.com')) {
-              const videoId = info.uri.split('v=')[1]?.split('&')[0];
-              if (videoId) {
-                thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-              }
-            }
-
-            if (!thumbnail && info.uri && info.uri.includes('youtu.be')) {
-              const videoId = info.uri.split('youtu.be/')[1]?.split('?')[0];
-              if (videoId) {
-                thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-              }
-            }
-
-            if (!thumbnail) {
-              thumbnail = 'https://i.imgur.com/QYJfXQv.png';
-            }
-
-            const currentPosition = player.position || 0;
-            const totalDuration = info.length || 0;
-            const status = player.paused ? '⏸️ Pause' : '▶️ Jouer';
-
-            const description = `**[${info.title || 'Titre inconnu'}](${info.uri || 'https://youtube.com'})**\n\n**Status:** ${status}\n**Current Duration:** ${formatTime(currentPosition)} / ${formatTime(totalDuration)}\n**Requested By:** <@${player.current.info.requester}>\n**Loop:** ${(!player.loop || player.loop === 'none') ? 'off' : player.loop}`;
-
-            const container = new ContainerBuilder()
-              .addSectionComponents(
-                new SectionBuilder()
-                  .addTextDisplayComponents(
-                    new TextDisplayBuilder()
-                      .setContent(`## ${config.emojis.music} Now Playing\n${description}`)
-                  )
-                  .setThumbnailAccessory(
-                    new ThumbnailBuilder()
-                      .setURL(thumbnail)
-                      .setDescription(info.title || 'Vignette de chanson')
-                  )
-              )
-              .addSeparatorComponents(
-                new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-              );
-
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'shuffle') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-            if (player.queue.length === 0) {
-              return message.reply(`${config.emojis.error} La file est vide`);
-            }
-
-            player.queue.shuffle();
-            const container = createSimpleContainer('Shuffled', 'Shuffled the queue', config.emojis.shuffle);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'loop') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            const mode = args[0]?.toLowerCase();
-            if (!mode || !['off', 'track', 'queue'].includes(mode)) {
-              return message.reply(`${config.emojis.error} Veuillez préciser : hors ligne, piste ou file d'attente`);
-            }
-
-            player.setLoop(mode);
-            const container = createSimpleContainer('Ensemble de boucles', `Boucle réglée sur : ${mode}`, config.emojis.loop);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'remove') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            const position = parseInt(args[0]) - 1;
-            if (isNaN(position) || position < 0 || position >= player.queue.length) {
-              return message.reply(`${config.emojis.error} Invalid position`);
-            }
-
-            const removed = player.queue.remove(position);
-            const container = createSimpleContainer('Removed', `Removed: ${removed.info.title}`, config.emojis.success);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'move') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            const from = parseInt(args[0]) - 1;
-            const to = parseInt(args[1]) - 1;
-
-            if (isNaN(from) || isNaN(to) || from < 0 || from >= player.queue.length || to < 0 || to >= player.queue.length) {
-              return message.reply(`${config.emojis.error} Posision Invalide`);
-            }
-
-            const track = player.queue.remove(from);
-            player.queue.splice(to, 0, track);
-            const container = createSimpleContainer('Moov', `Moov: ${track.info.title}`, config.emojis.success);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'clearqueue') {
-            const player = riffy.players.get(message.guild.id);
-            if (!player) return message.reply(`${config.emojis.error} Aucun joueur trouvé`);
-            if (!message.member.voice.channel || message.member.voice.channel.id !== player.voiceChannel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans le même canal vocal`);
-            }
-
-            player.queue.clear();
-            const container = createSimpleContainer('File vidée', 'File vidée', config.emojis.success);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === '247') {
-            if (!message.member.voice.channel) {
-              return message.reply(`${config.emojis.error} Tu dois être dans un canal vocal`);
-            }
-
-            if (queue247.has(message.guild.id)) {
-              queue247.delete(message.guild.id);
-              const container = createSimpleContainer('24/7 désactivé', 'Mode 24/7 désactivé', config.emojis.success);
-              await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-            } else {
-              queue247.add(message.guild.id);
-
-              let player = riffy.players.get(message.guild.id);
-              if (!player) {
-                riffy.createConnection({
-                  guildId: message.guild.id,
-                  voiceChannel: message.member.voice.channel.id,
-                  textChannel: message.channel.id,
-                  deaf: true
-                });
-              }
-
-              const container = createSimpleContainer('Activé 24/7', 'Mode 24/7 activé', config.emojis.success);
-              await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-            }
-          }
-
-          if (command === 'stats') {
-            const statsContainer = createStatsContainer();
-            await message.reply({ components: [statsContainer], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'ping') {
-            const container = createSimpleContainer('Pong!', `Latency: ${client.ws.ping}ms`, config.emojis.info);
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'invite') {
-            const invite = `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=3165184&scope=bot%20applications.commands`;
-
-            const container = new ContainerBuilder()
-              .addSectionComponents(
-                new SectionBuilder()
-                  .addTextDisplayComponents(
-                    new TextDisplayBuilder()
-                      .setContent(`## ${config.emojis.success} Invite le Bot\n[Clique ici pour m'inviter](${invite})`)
-                  )
-                  .setThumbnailAccessory(
-                    new ThumbnailBuilder()
-                      .setURL(client.user.displayAvatarURL({ size: 1024 }))
-                      .setDescription('Invite Bot')
-                  )
-              )
-              .addSeparatorComponents(
-                new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-              )
-              .addActionRowComponents(
-                new ActionRowBuilder()
-                  .addComponents(
-                    new ButtonBuilder()
-                      .setLabel('Invite Moi')
-                      .setStyle(ButtonStyle.Link)
-                      .setURL(invite)
-                  )
-              );
-
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'support') {
-            const container = new ContainerBuilder()
-              .addSectionComponents(
-                new SectionBuilder()
-                  .addTextDisplayComponents(
-                    new TextDisplayBuilder()
-                      .setContent(`## ${config.emojis.info} Serveur d'assistance des bots\n[Rejoins notre serveur d’assistance](${config.supportServer})`)
-                  )
-                  .setThumbnailAccessory(
-                    new ThumbnailBuilder()
-                      .setURL(client.user.displayAvatarURL({ size: 1024 }))
-                      .setDescription('Support Server')
-                  )
-              )
-              .addSeparatorComponents(
-                new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-              )
-              .addActionRowComponents(
-                new ActionRowBuilder()
-                  .addComponents(
-                    new ButtonBuilder()
-                      .setLabel('Support')
-                      .setStyle(ButtonStyle.Link)
-                      .setURL(config.supportServer)
-                  )
-              );
-
-            await message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-          }
-
-          if (command === 'help') {
-            const helpContainer = createHelpContainer();
-            await message.reply({ components: [helpContainer], flags: MessageFlags.IsComponentsV2 });
-          }
+        return interaction.reply({
+          components: [container],
+          flags:
+            MessageFlags.IsComponentsV2
         });
       }
 
-      client.login(config.token);
+      // ======================================================
+      // HELP
+      // ======================================================
+
+      if (
+        commandName === 'help'
+      ) {
+        return interaction.reply({
+          components: [
+            createHelpContainer()
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+    } catch (error) {
+      console.error(
+        `${config.emojis.error} Erreur interaction :`,
+        error
+      );
+
+      if (
+        interaction.deferred
+      ) {
+        await interaction.editReply({
+          content:
+            `${config.emojis.error} Une erreur est survenue.`
+        }).catch(() => {});
+      } else if (
+        !interaction.replied
+      ) {
+        await interaction.reply({
+          content:
+            `${config.emojis.error} Une erreur est survenue.`,
+          ephemeral: true
+        }).catch(() => {});
+      }
+    }
+  }
+);
+
+// ============================================================
+// COMMANDES PREFIX
+// ============================================================
+
+if (config.enablePrefix) {
+  client.on(
+    'messageCreate',
+    async (message) => {
+      if (
+        message.author.bot ||
+        !message.guild
+      ) {
+        return;
+      }
+
+      if (
+        !message.content.startsWith(
+          config.prefix
+        )
+      ) {
+        return;
+      }
+
+      const args =
+        message.content
+          .slice(config.prefix.length)
+          .trim()
+          .split(/\s+/);
+
+      let command =
+        args.shift()
+          ?.toLowerCase();
+
+      if (!command) {
+        return;
+      }
+
+      for (
+        const [
+          cmd,
+          aliases
+        ] of Object.entries(
+          config.aliases
+        )
+      ) {
+        if (
+          aliases.includes(
+            command
+          )
+        ) {
+          command = cmd;
+          break;
+        }
+      }
+
+      // ========================================================
+      // PLAY PREFIX
+      // ========================================================
+
+      if (
+        command === 'play'
+      ) {
+        const query =
+          args.join(' ');
+
+        if (!query) {
+          return message.reply(
+            `${config.emojis.error} Indique une musique ou une URL.`
+          );
+        }
+
+        if (
+          !message.member.voice?.channel
+        ) {
+          return message.reply(
+            `${config.emojis.error} Tu dois être dans un canal vocal.`
+          );
+        }
+
+        if (
+          !isLavalinkConnected
+        ) {
+          return message.reply(
+            `${config.emojis.error} Lavalink n'est pas connecté.`
+          );
+        }
+
+        try {
+          let player =
+            riffy.players.get(
+              message.guild.id
+            );
+
+          if (!player) {
+            player =
+              riffy.createConnection({
+                guildId:
+                  message.guild.id,
+                voiceChannel:
+                  message.member.voice
+                    .channel.id,
+                textChannel:
+                  message.channel.id,
+                deaf: true
+              });
+          }
+
+          const result =
+            await riffy.resolve({
+              query,
+              requester:
+                message.author.id
+            });
+
+          if (
+            !result ||
+            !result.tracks ||
+            result.tracks.length === 0
+          ) {
+            return message.reply(
+              `${config.emojis.error} Aucun résultat trouvé.`
+            );
+          }
+
+          if (
+            result.loadType ===
+            'playlist'
+          ) {
+            for (
+              const track of result.tracks
+            ) {
+              track.info.requester =
+                message.author.id;
+
+              player.queue.add(
+                track
+              );
+            }
+
+            await message.reply({
+              components: [
+                createSimpleContainer(
+                  'Playlist ajoutée',
+                  `**${result.playlistInfo?.name || 'Playlist'}** — ${result.tracks.length} piste(s).`,
+                  config.emojis.success
+                )
+              ],
+              flags:
+                MessageFlags.IsComponentsV2
+            });
+          } else {
+            const track =
+              result.tracks[0];
+
+            track.info.requester =
+              message.author.id;
+
+            player.queue.add(
+              track
+            );
+
+            await message.reply({
+              components: [
+                createSimpleContainer(
+                  'Musique ajoutée',
+                  `**[${track.info.title}](${track.info.uri})**`,
+                  config.emojis.success
+                )
+              ],
+              flags:
+                MessageFlags.IsComponentsV2
+            });
+          }
+
+          if (
+            !player.playing &&
+            !player.paused
+          ) {
+            player.play();
+          }
+
+        } catch (error) {
+          console.error(
+            'Erreur play prefix :',
+            error
+          );
+
+          await message.reply(
+            `${config.emojis.error} Une erreur est survenue pendant la lecture.`
+          );
+        }
+
+        return;
+      }
+
+      // ========================================================
+      // COMMANDES PREFIX SIMPLES
+      // ========================================================
+
+      const player =
+        riffy.players.get(
+          message.guild.id
+        );
+
+      if (
+        command === 'pause'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        player.pause(true);
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Pause',
+              'Musique mise en pause.',
+              config.emojis.pause
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'resume'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        player.pause(false);
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Lecture reprise',
+              'La musique reprend.',
+              config.emojis.play
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'skip'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        player.stop();
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Musique suivante',
+              'Passage à la piste suivante.',
+              config.emojis.skip
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'stop'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        player.destroy();
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Lecture arrêtée',
+              'La lecture a été arrêtée.',
+              config.emojis.stop
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'volume'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        const volume =
+          parseInt(
+            args[0],
+            10
+          );
+
+        if (
+          Number.isNaN(volume) ||
+          volume < 1 ||
+          volume > 100
+        ) {
+          return message.reply(
+            `${config.emojis.error} Indique un volume entre 1 et 100.`
+          );
+        }
+
+        player.setVolume(
+          volume
+        );
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Volume',
+              `Volume réglé sur **${volume}%**.`,
+              config.emojis.volume
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'queue'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        return message.reply({
+          components: [
+            createQueueContainer(
+              player
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'nowplaying'
+      ) {
+        if (
+          !player ||
+          !player.current
+        ) {
+          return message.reply(
+            `${config.emojis.error} Aucune musique en cours.`
+          );
+        }
+
+        return message.reply({
+          components: [
+            createNowPlayingContainer(
+              player,
+              player.current
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'shuffle'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        if (
+          player.queue.length === 0
+        ) {
+          return message.reply(
+            `${config.emojis.error} La file est vide.`
+          );
+        }
+
+        player.queue.shuffle();
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'File mélangée',
+              'La file a été mélangée.',
+              config.emojis.shuffle
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'loop'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        const mode =
+          args[0]?.toLowerCase();
+
+        if (
+          ![
+            'none',
+            'track',
+            'queue'
+          ].includes(mode)
+        ) {
+          return message.reply(
+            `${config.emojis.error} Utilise : \`!loop none\`, \`!loop track\` ou \`!loop queue\`.`
+          );
+        }
+
+        player.setLoop(
+          mode
+        );
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Boucle',
+              `Mode : **${mode}**.`,
+              config.emojis.loop
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'clearqueue'
+      ) {
+        if (!player) {
+          return message.reply(
+            `${config.emojis.error} Aucun lecteur trouvé.`
+          );
+        }
+
+        player.queue.clear();
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'File vidée',
+              'La file d’attente a été vidée.',
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === '247'
+      ) {
+        if (
+          !message.member.voice?.channel
+        ) {
+          return message.reply(
+            `${config.emojis.error} Tu dois être dans un canal vocal.`
+          );
+        }
+
+        if (
+          queue247.has(
+            message.guild.id
+          )
+        ) {
+          queue247.delete(
+            message.guild.id
+          );
+
+          return message.reply({
+            components: [
+              createSimpleContainer(
+                '24/7 désactivé',
+                'Le mode 24/7 est désactivé.',
+                config.emojis.success
+              )
+            ],
+            flags:
+              MessageFlags.IsComponentsV2
+          });
+        }
+
+        queue247.add(
+          message.guild.id
+        );
+
+        if (!player) {
+          riffy.createConnection({
+            guildId:
+              message.guild.id,
+            voiceChannel:
+              message.member.voice
+                .channel.id,
+            textChannel:
+              message.channel.id,
+            deaf: true
+          });
+        }
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              '24/7 activé',
+              'Le bot restera connecté au canal vocal.',
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'stats'
+      ) {
+        return message.reply({
+          components: [
+            createStatsContainer()
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'ping'
+      ) {
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Pong !',
+              `Latence : **${client.ws.ping}ms**`,
+              config.emojis.info
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'invite'
+      ) {
+        const invite =
+          `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}` +
+          `&permissions=3165184&scope=bot%20applications.commands`;
+
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Inviter le bot',
+              `[Cliquer ici pour m'inviter](${invite})`,
+              config.emojis.success
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'support'
+      ) {
+        return message.reply({
+          components: [
+            createSimpleContainer(
+              'Serveur support',
+              `[Rejoindre notre serveur d'assistance](${config.supportServer})`,
+              config.emojis.info
+            )
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+
+      if (
+        command === 'help'
+      ) {
+        return message.reply({
+          components: [
+            createHelpContainer()
+          ],
+          flags:
+            MessageFlags.IsComponentsV2
+        });
+      }
+    }
+  );
+}
+
+// ============================================================
+// DÉMARRAGE
+// ============================================================
+
+startExpressServer();
+
+if (!config.token) {
+  console.error(
+    `${config.emojis.error} DISCORD_TOKEN est introuvable dans les variables d'environnement.`
+  );
+
+  process.exit(1);
+}
+
+client.login(
+  config.token
+).catch((error) => {
+  console.error(
+    `${config.emojis.error} Impossible de connecter le bot :`,
+    error
+  );
+
+  process.exit(1);
+});
+
+// ============================================================
+// ERREURS GLOBALES
+// ============================================================
+
+process.on(
+  'unhandledRejection',
+  (error) => {
+    console.error(
+      'Unhandled Promise Rejection:',
+      error
+    );
+  }
+);
+
+process.on(
+  'uncaughtException',
+  (error) => {
+    console.error(
+      'Uncaught Exception:',
+      error
+    );
+  }
+);
