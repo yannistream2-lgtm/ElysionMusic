@@ -6,8 +6,8 @@ module.exports = {
   supportServer: "https://discord.gg/7uRnJ2Zd8k",
 
   activity: {
-    name: "!help",
-    type: "LISTENING" // PLAYING, LISTENING, WATCHING, STREAMING, COMPETING
+    name: "Elysion | Age of Heroes",
+    type: "PLAYING" // PLAYING, LISTENING, WATCHING, STREAMING, COMPETING
   },
 
   express: {
